@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:country_picker/country_picker.dart';
 import '../services/api_service.dart';
+import '../widgets/sweet_alert.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final Map<String, dynamic> currentData;
@@ -75,11 +76,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _selectedGender == null ||
         _selectedCountryCode == null ||
         _selectedReligiousBelief == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Por favor completa todos los campos'),
-          backgroundColor: Colors.red,
-        ),
+      SweetAlert.showError(
+        context: context,
+        title: 'Campos incompletos',
+        message: 'Por favor completa todos los campos',
       );
       return;
     }
@@ -102,21 +102,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     if (result['success']) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Perfil actualizado correctamente'),
-            backgroundColor: Colors.green,
-          ),
+        SweetAlert.showSuccess(
+          context: context,
+          title: 'Perfil actualizado',
+          message: 'Tu información ha sido actualizada correctamente',
+          backgroundColor: const Color(0xFF102110),
+          onConfirm: () {
+            Navigator.of(context).pop(true);
+          },
         );
-        Navigator.of(context).pop(true);
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message'] ?? 'Error al actualizar el perfil'),
-            backgroundColor: Colors.red,
-          ),
+        SweetAlert.showError(
+          context: context,
+          title: 'Error al actualizar',
+          message: result['message'] ?? 'No se pudo actualizar el perfil',
         );
       }
     }
