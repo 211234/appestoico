@@ -25,17 +25,34 @@ class _Quiz5ScreenState extends State<Quiz5Screen> {
       'color': Colors.blue,
     },
     {
+      'level': 'Básico Intermedio',
+      'title': 'Básico Intermedio',
+      'description':
+          'Tengo conocimientos básicos y estoy empezando a profundizar en el Estoicismo.',
+      'icon': Icons.brightness_6,
+      'color': Colors.lightBlue,
+    },
+    {
       'level': 'Intermedio',
       'title': 'Intermedio',
       'description':
-          'Tengo una buena comprensión del Estoicismo, pero no tan profundo.',
+          'Tengo una buena comprensión del Estoicismo y sus principios fundamentales.',
       'icon': Icons.wb_sunny,
       'color': Colors.orange,
     },
     {
+      'level': 'Intermedio Avanzado',
+      'title': 'Intermedio Avanzado',
+      'description':
+          'Tengo un conocimiento sólido y aplico consistentemente los principios estoicos.',
+      'icon': Icons.wb_sunny_rounded,
+      'color': Colors.deepOrange,
+    },
+    {
       'level': 'Avanzado',
       'title': 'Avanzado',
-      'description': 'Estoy muy bien versado en el Estoicismo.',
+      'description':
+          'Estoy muy bien versado en el Estoicismo y lo practico diariamente.',
       'icon': Icons.wb_sunny_outlined,
       'color': Colors.amber,
     },

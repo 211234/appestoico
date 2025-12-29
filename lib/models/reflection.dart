@@ -1,6 +1,7 @@
 class Reflection {
   final String? id;
   final String? date;
+  final String? time;
   final String? text;
   final String?
   morningText; // Mantener para compatibilidad con código existente
@@ -12,6 +13,7 @@ class Reflection {
   Reflection({
     this.id,
     this.date,
+    this.time,
     this.text,
     this.morningText,
     this.eveningText,
@@ -28,6 +30,7 @@ class Reflection {
       date:
           json['date']?.toString() ??
           json['created_at']?.toString().split('T')[0],
+      time: json['time']?.toString(),
       text: reflectionText,
       // Para compatibilidad, si existe 'text', usarlo también como morningText
       morningText: reflectionText ?? json['morning_text']?.toString(),

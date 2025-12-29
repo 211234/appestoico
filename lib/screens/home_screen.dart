@@ -946,14 +946,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _formatReflectionTime(Reflection reflection) {
     try {
-      final dateStr = reflection.createdAt ?? reflection.date;
-      if (dateStr == null) return 'Hoy';
+      DateTime date;
 
-      final date = DateTime.parse(dateStr);
+      // Intentar construir fecha/hora completa si tenemos date y time
+      if (reflection.date != null && reflection.time != null) {
+        // Combinar date (2025-12-22) y time (19:15:15)
+        final dateTimeStr = '${reflection.date} ${reflection.time}';
+        date = DateTime.parse(dateTimeStr);
+      } else if (reflection.createdAt != null) {
+        date = DateTime.parse(reflection.createdAt!);
+      } else if (reflection.date != null) {
+        date = DateTime.parse(reflection.date!);
+      } else {
+        return 'Hoy';
+      }
+
       final now = DateTime.now();
       final difference = now.difference(date);
 
-      if (difference.inMinutes < 60) {
+      if (difference.inMinutes < 1) {
+        return 'Ahora';
+      } else if (difference.inMinutes < 60) {
         return 'Hace ${difference.inMinutes} min';
       } else if (difference.inHours < 24) {
         return 'Hace ${difference.inHours}h';

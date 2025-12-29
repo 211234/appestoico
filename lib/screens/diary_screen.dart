@@ -183,17 +183,24 @@ class _DiaryScreenState extends State<DiaryScreen> {
   }
 
   Widget _buildReflectionCard(Reflection reflection) {
-    // Obtener la hora de creación si está disponible
+    // Obtener la hora de creación o actualización
     String timeStr = '';
-    try {
-      // Intentar parsear la fecha (puede ser created_at o date)
-      final dateSource = reflection.createdAt ?? reflection.date;
-      if (dateSource != null) {
-        final dateTime = DateTime.parse(dateSource);
-        timeStr = DateFormat('HH:mm', 'es').format(dateTime);
+
+    // Priorizar el campo 'time' del backend
+    if (reflection.time != null && reflection.time!.isNotEmpty) {
+      timeStr = reflection.time!;
+    } else {
+      // Fallback: intentar extraer hora de created_at o updated_at
+      try {
+        final dateSource =
+            reflection.updatedAt ?? reflection.createdAt ?? reflection.date;
+        if (dateSource != null) {
+          final dateTime = DateTime.parse(dateSource);
+          timeStr = DateFormat('HH:mm:ss', 'es').format(dateTime);
+        }
+      } catch (e) {
+        timeStr = '';
       }
-    } catch (e) {
-      timeStr = '';
     }
 
     return Container(
@@ -224,12 +231,50 @@ class _DiaryScreenState extends State<DiaryScreen> {
                   ),
                   if (timeStr.isNotEmpty) ...[
                     const SizedBox(height: 4),
-                    Text(
-                      timeStr,
-                      style: const TextStyle(
-                        color: Colors.white54,
-                        fontSize: 12,
-                      ),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.access_time,
+                          color: Colors.white54,
+                          size: 12,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          timeStr,
+                          style: const TextStyle(
+                            color: Colors.white54,
+                            fontSize: 12,
+                          ),
+                        ),
+                        // Mostrar badge de "Editado" si fue actualizado
+                        if (reflection.updatedAt != null &&
+                            reflection.createdAt != null &&
+                            reflection.updatedAt != reflection.createdAt) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: Colors.blue.withOpacity(0.5),
+                                width: 1,
+                              ),
+                            ),
+                            child: const Text(
+                              'Editado',
+                              style: TextStyle(
+                                color: Colors.blue,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ],

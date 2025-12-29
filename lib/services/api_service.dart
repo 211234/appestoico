@@ -1022,8 +1022,6 @@ class ApiService {
             },
             body: jsonEncode({
               'text': morningText,
-              'date': date,
-              'created_at': DateTime.now().toIso8601String(),
             }),
           )
           .timeout(const Duration(seconds: 10));
