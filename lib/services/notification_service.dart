@@ -51,7 +51,7 @@ class NotificationService {
     required int id,
     required String title,
     required String body,
-    required TimeOfDay time,
+    required TimeOfDay time, required TimeOfDay scheduledTime,
   }) async {
     await initialize();
 
@@ -191,6 +191,10 @@ class NotificationService {
         title: notification['title'] as String,
         body: notification['body'] as String,
         time: TimeOfDay(
+          hour: notification['hour'] as int,
+          minute: notification['minute'] as int,
+        ),
+        scheduledTime: TimeOfDay(
           hour: notification['hour'] as int,
           minute: notification['minute'] as int,
         ),

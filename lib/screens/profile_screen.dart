@@ -245,6 +245,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     final nombre = _userData!['nombre'] ?? 'Usuario';
+    final apellidos = _userData!['apellidos'] ?? '';
+    final nombreCompleto = apellidos.isEmpty ? nombre : '$nombre $apellidos';
     final email = _userData!['email'] ?? '';
 
     final nivel = _userData!['nivel'] ?? 'Principiante';
@@ -299,7 +301,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    nombre,
+                    nombreCompleto,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -456,7 +458,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       // Título
                       Text(
-                        'Hola, $nombre',
+                        'Hola, $nombreCompleto',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 26,

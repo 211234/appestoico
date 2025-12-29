@@ -175,18 +175,13 @@ class ApiService {
 
       if (response.statusCode == 200 && data['success'] == true) {
         // Guardar token y datos del usuario
-
         await saveUserData(
           token: data['token'],
-          userId: data['data']['id'],
+          userId: data['data']['id'].toString(),
           nombre: data['data']['nombre'],
           apellidos: data['data']['apellidos'],
           email: data['data']['email'],
         );
-
-        // Verificar que se guardó correctamente
-        final prefs = await SharedPreferences.getInstance();
-        final savedToken = prefs.getString('token');
 
         return {'success': true, 'data': data};
       } else {
@@ -470,7 +465,7 @@ class ApiService {
     required String spiritualPracticeFrequency,
     required List<String> dailyChallenges,
     required List<String> stoicPaths,
-    String? knowledgeLevel,
+    String? stoicLevel,
   }) async {
     try {
       // Obtener el token del usuario
@@ -500,7 +495,7 @@ class ApiService {
               'spiritual_practice_frequency': spiritualPracticeFrequency,
               'daily_challenges': dailyChallenges,
               'stoic_paths': stoicPaths,
-              'knowledge_level': knowledgeLevel,
+              'stoic_level': stoicLevel,
             }),
           )
           .timeout(const Duration(seconds: 10));
@@ -864,6 +859,88 @@ class ApiService {
     }
   }
 
+  // Actualizar perfil completo (nombre, apellidos y datos del quiz)
+  static Future<Map<String, dynamic>> updateProfile({
+    required String ageRange,
+    required String gender,
+    required String country,
+    required String religiousBelief,
+    required String spiritualPracticeLevel,
+    required String spiritualPracticeFrequency,
+    required List<String> stoicPaths,
+    String? stoicLevel,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null || token.isEmpty) {
+        return {
+          'success': false,
+          'message': 'No se encontró el token de autenticación',
+        };
+      }
+
+      final response = await http
+          .patch(
+            Uri.parse('$baseUrl/users/quiz-info'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode({
+              'age_range': ageRange,
+              'gender': gender,
+              'country': country,
+              'religious_belief': religiousBelief,
+              'spiritual_practice_level': spiritualPracticeLevel,
+              'spiritual_practice_frequency': spiritualPracticeFrequency,
+              'stoic_paths': stoicPaths,
+              'stoic_level': stoicLevel,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'El servidor no respondió correctamente',
+        };
+      }
+
+      Map<String, dynamic> data;
+      try {
+        data = jsonDecode(response.body);
+      } catch (e) {
+        print('❌ Error parsing JSON in updateProfile: $e');
+        return {
+          'success': false,
+          'message':
+              'Error al procesar la respuesta. Status: ${response.statusCode}',
+        };
+      }
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Perfil actualizado correctamente',
+          'data': data['data'],
+        };
+      } else {
+        print('❌ Error del servidor: ${response.statusCode}');
+        print('❌ Mensaje de error: ${data['message']}');
+        print('❌ Errores: ${data['errors']}');
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Error al actualizar perfil',
+          'errors': data['errors'],
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
+  }
+
   // ========== MÉTODOS DE DIARIO (DIARY SERVICE) ==========
 
   // Obtener todas las reflexiones del usuario
@@ -1020,9 +1097,7 @@ class ApiService {
               'Authorization': 'Bearer $token',
               'ngrok-skip-browser-warning': 'true',
             },
-            body: jsonEncode({
-              'text': morningText,
-            }),
+            body: jsonEncode({'text': morningText}),
           )
           .timeout(const Duration(seconds: 10));
 

@@ -179,7 +179,7 @@ class _Quiz2ScreenState extends State<Quiz2Screen> {
                   border: Border.all(color: Colors.orange, width: 1),
                 ),
                 child: const Text(
-                  'Paso 2 de 4',
+                  'Paso 2 de 5',
                   style: TextStyle(
                     color: Colors.orange,
                     fontSize: 14,

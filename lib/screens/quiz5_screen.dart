@@ -73,7 +73,7 @@ class _Quiz5ScreenState extends State<Quiz5Screen> {
     });
 
     // Guardar el nivel seleccionado en QuizService
-    QuizService.updateQuiz5(knowledgeLevel: selectedLevel!);
+    QuizService.updateQuiz5(stoicLevel: selectedLevel!);
 
     // Obtener todos los datos del quiz
     final quiz = QuizService.currentQuiz;
@@ -101,7 +101,7 @@ class _Quiz5ScreenState extends State<Quiz5Screen> {
       spiritualPracticeFrequency: quiz.spiritualPracticeFrequency!,
       dailyChallenges: quiz.dailyChallenges,
       stoicPaths: quiz.stoicPaths,
-      knowledgeLevel: quiz.knowledgeLevel,
+      stoicLevel: quiz.stoicLevel,
     );
 
     setState(() {

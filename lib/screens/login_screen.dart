@@ -101,9 +101,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _loginWithGoogle() {
     // Abrir WebView con la autenticación de Google
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (context) => const GoogleAuthScreen()));
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const GoogleAuthScreen(
+          authUrl: 'https://web.estoico.app/api/auth/google/redirect',
+        ),
+      ),
+    );
   }
 
   @override

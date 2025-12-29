@@ -7,7 +7,7 @@ class QuizData {
   String? spiritualPracticeFrequency;
   List<String> dailyChallenges;
   List<String> stoicPaths;
-  String? knowledgeLevel;
+  String? stoicLevel;
 
   QuizData({
     this.ageRange,
@@ -18,7 +18,7 @@ class QuizData {
     this.spiritualPracticeFrequency,
     this.dailyChallenges = const [],
     this.stoicPaths = const [],
-    this.knowledgeLevel,
+    this.stoicLevel,
   });
 
   // Convertir a JSON para enviar al API
@@ -32,7 +32,7 @@ class QuizData {
       'spiritual_practice_frequency': spiritualPracticeFrequency,
       'daily_challenges': dailyChallenges,
       'stoic_paths': stoicPaths,
-      'knowledge_level': knowledgeLevel,
+      'stoic_level': stoicLevel,
     };
   }
 
@@ -47,7 +47,7 @@ class QuizData {
       spiritualPracticeFrequency: json['spiritual_practice_frequency'],
       dailyChallenges: List<String>.from(json['daily_challenges'] ?? []),
       stoicPaths: List<String>.from(json['stoic_paths'] ?? []),
-      knowledgeLevel: json['knowledge_level'],
+      stoicLevel: json['stoic_level'],
     );
   }
 
@@ -75,7 +75,7 @@ class QuizData {
 
   // Verificar si el Quiz5 está completo (nivel de conocimiento)
   bool isQuiz5Complete() {
-    return knowledgeLevel != null;
+    return stoicLevel != null;
   }
 
   // Verificar si todo el quiz está completo

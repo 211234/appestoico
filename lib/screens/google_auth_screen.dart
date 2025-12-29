@@ -9,7 +9,12 @@ import 'package:flutter_custom_tabs/flutter_custom_tabs.dart';
 import 'package:app_links/app_links.dart';
 
 class GoogleAuthScreen extends StatefulWidget {
-  const GoogleAuthScreen({Key? key}) : super(key: key);
+  final String authUrl;
+
+  const GoogleAuthScreen({
+    Key? key,
+    this.authUrl = 'https://web.estoico.app/api/auth/google/redirect',
+  }) : super(key: key);
 
   @override
   State<GoogleAuthScreen> createState() => _GoogleAuthScreenState();
@@ -56,6 +61,9 @@ class _GoogleAuthScreenState extends State<GoogleAuthScreen> {
       } else if (uri.path.contains('error')) {
         _handleAuthError(uri.toString());
       }
+    } else if (uri.queryParameters.containsKey('token')) {
+      // El backend puede redirigir directamente con el token en los parámetros
+      _handleAuthSuccess(uri.toString());
     }
   }
 
@@ -66,38 +74,28 @@ class _GoogleAuthScreenState extends State<GoogleAuthScreen> {
       });
 
       // Obtener la URL de autenticación del backend
-      final response = await http.get(
-        Uri.parse('${ApiService.baseUrl}/auth/google/redirect'),
-      );
+      final response = await http.get(Uri.parse(widget.authUrl));
 
-      String authUrl = '${ApiService.baseUrl}/auth/google/redirect';
+      String authUrl = widget.authUrl;
 
-      // Si el backend devuelve JSON con la URL
+      // El backend devuelve JSON con la URL de Google
       if (response.statusCode == 200) {
         try {
           final data = jsonDecode(response.body);
-          if (data['data'] != null && data['data']['url'] != null) {
+          if (data['success'] == true &&
+              data['data'] != null &&
+              data['data']['url'] != null) {
+            // Extraer la URL real de Google del JSON
             authUrl = data['data']['url'];
           }
-        } catch (e) {}
-      }
-
-      // Modificar redirect_uri y agregar prompt=select_account
-      final uri = Uri.parse(authUrl);
-      final params = Map<String, dynamic>.from(uri.queryParameters);
-
-      // Cambiar localhost por ngrok en redirect_uri para móvil
-      if (params.containsKey('redirect_uri')) {
-        String redirectUri = params['redirect_uri'].toString();
-        if (redirectUri.contains('localhost')) {
-          // Reemplazar localhost con el dominio ngrok del backend
-          redirectUri = redirectUri.replaceAll(
-            'http://localhost:8000',
-            ApiService.baseUrl.replaceAll('/api', ''),
-          );
-          params['redirect_uri'] = redirectUri;
+        } catch (e) {
+          // Si no es JSON, usar la URL original
         }
       }
+
+      // Agregar prompt=select_account si no está presente
+      final uri = Uri.parse(authUrl);
+      final params = Map<String, dynamic>.from(uri.queryParameters);
 
       if (!params.containsKey('prompt')) {
         params['prompt'] = 'select_account';
@@ -105,7 +103,7 @@ class _GoogleAuthScreenState extends State<GoogleAuthScreen> {
 
       authUrl = uri.replace(queryParameters: params).toString();
 
-      // Abrir Chrome Custom Tab
+      // Abrir Chrome Custom Tab con la URL de Google
       await _launchURL(authUrl);
 
       setState(() {
@@ -119,7 +117,7 @@ class _GoogleAuthScreenState extends State<GoogleAuthScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al conectar con el servidor: $e'),
+            content: Text('Error al abrir navegador: $e'),
             backgroundColor: Colors.red,
           ),
         );

@@ -114,6 +114,7 @@ class _Quiz3ScreenState extends State<Quiz3Screen> {
           title: '🏛️ ${challenge['title']}',
           body: challenge['description'] as String,
           time: horario,
+          scheduledTime: horario,
         );
       }
     }

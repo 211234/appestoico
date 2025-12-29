@@ -44,8 +44,8 @@ class QuizService {
   }
 
   // Actualizar datos del Quiz5 (Nivel de Conocimiento)
-  static void updateQuiz5({required String knowledgeLevel}) {
-    _currentQuiz.knowledgeLevel = knowledgeLevel;
+  static void updateQuiz5({required String stoicLevel}) {
+    _currentQuiz.stoicLevel = stoicLevel;
     _saveToPreferences();
   }
 
@@ -90,11 +90,8 @@ class QuizService {
       _currentQuiz.dailyChallenges,
     );
     await prefs.setStringList('quiz_stoic_paths', _currentQuiz.stoicPaths);
-    if (_currentQuiz.knowledgeLevel != null) {
-      await prefs.setString(
-        'quiz_knowledge_level',
-        _currentQuiz.knowledgeLevel!,
-      );
+    if (_currentQuiz.stoicLevel != null) {
+      await prefs.setString('quiz_stoic_level', _currentQuiz.stoicLevel!);
     }
   }
 
@@ -112,7 +109,7 @@ class QuizService {
       ),
       dailyChallenges: prefs.getStringList('quiz_daily_challenges') ?? [],
       stoicPaths: prefs.getStringList('quiz_stoic_paths') ?? [],
-      knowledgeLevel: prefs.getString('quiz_knowledge_level'),
+      stoicLevel: prefs.getString('quiz_stoic_level'),
     );
   }
 
@@ -127,6 +124,6 @@ class QuizService {
     await prefs.remove('quiz_spiritual_practice_frequency');
     await prefs.remove('quiz_daily_challenges');
     await prefs.remove('quiz_stoic_paths');
-    await prefs.remove('quiz_knowledge_level');
+    await prefs.remove('quiz_stoic_level');
   }
 }

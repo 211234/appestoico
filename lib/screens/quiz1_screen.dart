@@ -108,7 +108,7 @@ class _Quiz1ScreenState extends State<Quiz1Screen> {
                   border: Border.all(color: Colors.orange, width: 1),
                 ),
                 child: const Text(
-                  'Paso 1 de 4',
+                  'Paso 1 de 5',
                   style: TextStyle(
                     color: Colors.orange,
                     fontSize: 14,
