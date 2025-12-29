@@ -6,8 +6,8 @@ import '../services/connectivity_service.dart';
 import '../widgets/sweet_alert.dart';
 import 'quiz2_screen.dart';
 import 'edit_profile_screen.dart';
-import 'premium_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -146,6 +146,81 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (mounted) {
       Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+    }
+  }
+
+  Future<void> _showPremiumDialog() async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey[900],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: const [
+              Icon(Icons.workspace_premium, color: Colors.orange, size: 28),
+              SizedBox(width: 12),
+              Text('Hacerse Premium', style: TextStyle(color: Colors.white)),
+            ],
+          ),
+          content: const Text(
+            '¿Deseas ir a la página web para suscribirte a Estoica Premium?',
+            style: TextStyle(color: Colors.white70, fontSize: 16),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(color: Colors.white60),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _launchPremiumUrl();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Continuar',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _launchPremiumUrl() async {
+    final url = Uri.parse('https://web.estoico.app/subscription/premium');
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          SweetAlert.showError(
+            context: context,
+            title: 'Error',
+            message: 'No se pudo abrir la página web',
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        SweetAlert.showError(
+          context: context,
+          title: 'Error',
+          message: 'Ocurrió un error al abrir la página: $e',
+        );
+      }
     }
   }
 
@@ -715,15 +790,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const PremiumScreen(),
-                                    ),
-                                  );
-                                },
+                                onPressed: _showPremiumDialog,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(
@@ -737,7 +804,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      'Ver planes',
+                                      'Hacerse Premium',
                                       style: TextStyle(
                                         color: Colors.orange.shade700,
                                         fontSize: 16,
@@ -746,7 +813,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                     const SizedBox(width: 8),
                                     Icon(
-                                      Icons.arrow_forward,
+                                      Icons.open_in_new,
                                       color: Colors.orange.shade700,
                                       size: 20,
                                     ),
