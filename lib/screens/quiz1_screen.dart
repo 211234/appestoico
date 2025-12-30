@@ -71,13 +71,12 @@ class _Quiz1ScreenState extends State<Quiz1Screen> {
       QuizService.updateQuiz1(
         ageRange: selectedAge!,
         gender: _getGenderValue(selectedGender!),
-        country:
-            selectedCountryCode ??
+        country: selectedCountryCode ??
             selectedCountry ??
             'MX', // Usar código del país
       );
 
-      // Navegar al home (el usuario completará el resto después)
+      // ✅ Navegar a HomePage (Quiz 1 completado)
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const HomePage()),
       );
