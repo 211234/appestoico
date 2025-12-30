@@ -200,8 +200,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _launchPremiumUrl() async {
-    final url = Uri.parse('https://web.estoico.app/subscription/premium');
     try {
+      // ✅ Obtener el token JWT del usuario
+      final prefs = await SharedPreferences.getInstance();
+      final jwtToken = prefs.getString('token');
+
+      if (jwtToken == null || jwtToken.isEmpty) {
+        if (mounted) {
+          SweetAlert.showError(
+            context: context,
+            title: 'Sesión expirada',
+            message: 'Por favor, inicia sesión nuevamente',
+          );
+        }
+        return;
+      }
+
+      // ✅ Construir URL con el token JWT como parámetro
+      final url = Uri.parse(
+          'https://web.estoico.app/subscription/premium?token=$jwtToken');
+
+      // ✅ Abrir URL directamente
       if (await canLaunchUrl(url)) {
         await launchUrl(url, mode: LaunchMode.externalApplication);
       } else {
@@ -218,7 +237,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         SweetAlert.showError(
           context: context,
           title: 'Error',
-          message: 'Ocurrió un error al abrir la página: $e',
+          message: 'Ocurrió un error: $e',
         );
       }
     }
