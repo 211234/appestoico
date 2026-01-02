@@ -17,7 +17,7 @@ class _Quiz5ScreenState extends State<Quiz5Screen> {
 
   final List<Map<String, dynamic>> knowledgeLevels = [
     {
-      'level': 'Principiante',
+      'level': 'principiante',
       'title': 'Principiante',
       'description':
           'No sé casi nada del tema o conozco solo lo superficial del Estoicismo.',
@@ -25,7 +25,7 @@ class _Quiz5ScreenState extends State<Quiz5Screen> {
       'color': Colors.blue,
     },
     {
-      'level': 'Básico Intermedio',
+      'level': 'basico_intermedio',
       'title': 'Básico Intermedio',
       'description':
           'Tengo conocimientos básicos y estoy empezando a profundizar en el Estoicismo.',
@@ -33,7 +33,7 @@ class _Quiz5ScreenState extends State<Quiz5Screen> {
       'color': Colors.lightBlue,
     },
     {
-      'level': 'Intermedio',
+      'level': 'intermedio',
       'title': 'Intermedio',
       'description':
           'Tengo una buena comprensión del Estoicismo y sus principios fundamentales.',
@@ -41,7 +41,7 @@ class _Quiz5ScreenState extends State<Quiz5Screen> {
       'color': Colors.orange,
     },
     {
-      'level': 'Intermedio Avanzado',
+      'level': 'intermedio_avanzado',
       'title': 'Intermedio Avanzado',
       'description':
           'Tengo un conocimiento sólido y aplico consistentemente los principios estoicos.',
@@ -49,7 +49,7 @@ class _Quiz5ScreenState extends State<Quiz5Screen> {
       'color': Colors.deepOrange,
     },
     {
-      'level': 'Avanzado',
+      'level': 'avanzado',
       'title': 'Avanzado',
       'description':
           'Estoy muy bien versado en el Estoicismo y lo practico diariamente.',
@@ -57,6 +57,25 @@ class _Quiz5ScreenState extends State<Quiz5Screen> {
       'color': Colors.amber,
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadQuizData();
+  }
+
+  Future<void> _loadQuizData() async {
+    // ✅ Cargar datos guardados desde SharedPreferences
+    await QuizService.loadFromPreferences();
+
+    // Cargar datos guardados si existen
+    final quiz = QuizService.currentQuiz;
+    if (quiz.isQuiz5Complete()) {
+      setState(() {
+        selectedLevel = quiz.stoicLevel;
+      });
+    }
+  }
 
   void _finishSetup() async {
     if (selectedLevel == null) {
@@ -92,6 +111,17 @@ class _Quiz5ScreenState extends State<Quiz5Screen> {
     }
 
     // Enviar el quiz al servidor
+    print('📤 Enviando quiz con datos:');
+    print('  ageRange: ${quiz.ageRange}');
+    print('  gender: ${quiz.gender}');
+    print('  country: ${quiz.country}');
+    print('  religiousBelief: ${quiz.religiousBelief}');
+    print('  spiritualPracticeLevel: ${quiz.spiritualPracticeLevel}');
+    print('  spiritualPracticeFrequency: ${quiz.spiritualPracticeFrequency}');
+    print('  dailyChallenges: ${quiz.dailyChallenges}');
+    print('  stoicPaths: ${quiz.stoicPaths}');
+    print('  stoicLevel: ${quiz.stoicLevel}');
+
     final result = await ApiService.submitQuiz(
       ageRange: quiz.ageRange!,
       gender: quiz.gender!,
@@ -103,6 +133,9 @@ class _Quiz5ScreenState extends State<Quiz5Screen> {
       stoicPaths: quiz.stoicPaths,
       stoicLevel: quiz.stoicLevel,
     );
+
+    print('📥 Respuesta del servidor: ${result['success']}');
+    print('  Mensaje: ${result['message']}');
 
     setState(() {
       _isSubmitting = false;
@@ -233,9 +266,8 @@ class _Quiz5ScreenState extends State<Quiz5Screen> {
                                   ? Colors.orange.withOpacity(0.2)
                                   : Colors.grey[900],
                               border: Border.all(
-                                color: isSelected
-                                    ? Colors.orange
-                                    : Colors.white24,
+                                color:
+                                    isSelected ? Colors.orange : Colors.white24,
                                 width: 2,
                               ),
                               borderRadius: BorderRadius.circular(16),

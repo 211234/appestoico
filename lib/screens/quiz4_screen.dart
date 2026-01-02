@@ -17,35 +17,60 @@ class _Quiz4ScreenState extends State<Quiz4Screen> {
   final List<Map<String, dynamic>> goals = [
     {
       'title': 'Paz Interior',
+      'key': 'paz_interior',
       'description': 'Encontrar calma en el caos diario',
       'icon': Icons.spa,
     },
     {
       'title': 'Autocontrol',
+      'key': 'autocontrol',
       'description': 'Dominar mis emociones y reacciones',
       'icon': Icons.psychology,
     },
     {
       'title': 'Sabiduría',
+      'key': 'sabiduria',
       'description': 'Desarrollar perspectiva y entendimiento',
       'icon': Icons.lightbulb,
     },
     {
       'title': 'Resiliencia',
+      'key': 'resiliencia',
       'description': 'Ser fuerte ante las adversidades',
       'icon': Icons.shield,
     },
     {
       'title': 'Propósito',
+      'key': 'proposito',
       'description': 'Encontrar significado en mi vida',
       'icon': Icons.track_changes,
     },
     {
       'title': 'Equilibrio',
+      'key': 'equilibrio',
       'description': 'Balancear todas las áreas de mi vida',
       'icon': Icons.balance,
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadQuizData();
+  }
+
+  Future<void> _loadQuizData() async {
+    // ✅ Cargar datos guardados desde SharedPreferences
+    await QuizService.loadFromPreferences();
+
+    // Cargar datos guardados si existen
+    final quiz = QuizService.currentQuiz;
+    if (quiz.isQuiz4Complete()) {
+      setState(() {
+        selectedGoals = quiz.stoicPaths;
+      });
+    }
+  }
 
   void _finishSetup() async {
     if (selectedGoals.length < 2) {
@@ -218,10 +243,10 @@ class _Quiz4ScreenState extends State<Quiz4Screen> {
                               setState(() {
                                 if (isSelected) {
                                   // Deseleccionar si ya está seleccionado
-                                  selectedGoals.remove(goal['title']);
+                                  selectedGoals.remove(goal['key']);
                                 } else {
                                   // Seleccionar (permitir múltiples)
-                                  selectedGoals.add(goal['title']);
+                                  selectedGoals.add(goal['key']);
                                 }
                               });
                             },
