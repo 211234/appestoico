@@ -44,6 +44,13 @@ class _Quiz2ScreenState extends State<Quiz2Screen> {
   @override
   void initState() {
     super.initState();
+    _loadQuizData();
+  }
+
+  Future<void> _loadQuizData() async {
+    // ✅ Cargar datos guardados desde SharedPreferences
+    await QuizService.loadFromPreferences();
+
     // Cargar datos guardados si existen
     final quiz = QuizService.currentQuiz;
     if (quiz.isQuiz2Complete()) {
@@ -358,9 +365,8 @@ class _Quiz2ScreenState extends State<Quiz2Screen> {
                               child: Text(
                                 practice,
                                 style: TextStyle(
-                                  color: isSelected
-                                      ? Colors.black
-                                      : Colors.white,
+                                  color:
+                                      isSelected ? Colors.black : Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -422,9 +428,8 @@ class _Quiz2ScreenState extends State<Quiz2Screen> {
                               child: Text(
                                 frequency,
                                 style: TextStyle(
-                                  color: isSelected
-                                      ? Colors.black
-                                      : Colors.white,
+                                  color:
+                                      isSelected ? Colors.black : Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -462,8 +467,7 @@ class _Quiz2ScreenState extends State<Quiz2Screen> {
                   borderRadius: BorderRadius.circular(28),
                 ),
                 child: ElevatedButton(
-                  onPressed:
-                      selectedReligion != null &&
+                  onPressed: selectedReligion != null &&
                           selectedSpiritualPractice != null &&
                           selectedFrequency != null
                       ? _continueToNext

@@ -42,10 +42,14 @@ class HorarioSelector extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              label,
-              style: const TextStyle(color: Colors.white70, fontSize: 16),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(color: Colors.white70, fontSize: 16),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
+            const SizedBox(width: 12),
             Text(
               horaSeleccionada != null
                   ? horaSeleccionada!.format(context)
@@ -56,6 +60,7 @@ class HorarioSelector extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
+            const SizedBox(width: 8),
             const Icon(Icons.access_time, color: Colors.orange),
           ],
         ),
