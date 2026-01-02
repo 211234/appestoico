@@ -78,12 +78,14 @@ class ApiService {
     required String nombre,
     required String apellidos,
     required String email,
+    Map<String, dynamic>? subscription,
   }) => LocalStorageService.saveUserData(
     token: token,
     userId: userId,
     nombre: nombre,
     apellidos: apellidos,
     email: email,
+    subscription: subscription,
   );
 
   // Obtener datos del usuario

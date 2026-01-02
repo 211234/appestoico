@@ -113,6 +113,7 @@ class AuthService {
           nombre: data['data']['nombre'],
           apellidos: data['data']['apellidos'],
           email: data['data']['email'],
+          subscription: data['subscription'], // Guardar información de suscripción
         );
 
         return {'success': true, 'data': data};

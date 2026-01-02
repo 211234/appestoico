@@ -9,6 +9,10 @@ class ExerciseDetailScreen extends StatelessWidget {
   final String name;
   final String level;
   final String objective;
+  final String? instructions;
+  final String? duration;
+  final String? reflection;
+  final String? source;
   final Color levelColor;
   final IconData levelIcon;
 
@@ -17,6 +21,10 @@ class ExerciseDetailScreen extends StatelessWidget {
     required this.name,
     required this.level,
     required this.objective,
+    this.instructions,
+    this.duration,
+    this.reflection,
+    this.source,
     required this.levelColor,
     required this.levelIcon,
   }) : super(key: key);
@@ -157,13 +165,119 @@ class ExerciseDetailScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      // Información adicional
-                      _buildInfoSection(
-                        icon: Icons.info_outline,
-                        title: 'Acerca de este ejercicio',
-                        content:
-                            'Este ejercicio ha sido generado específicamente para ti basándose en tu perfil estoico y tus objetivos personales. Complétalo para ganar puntos y avanzar en tu camino hacia la virtud.',
-                      ),
+                      
+                      // Instrucciones
+                      if (instructions != null && instructions!.isNotEmpty) ...[
+                        _buildInfoSection(
+                          icon: Icons.list_alt,
+                          title: 'Instrucciones',
+                          content: instructions!,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      
+                      // Duración
+                      if (duration != null && duration!.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[850],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.access_time,
+                                color: Colors.white70,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Duración',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      duration!,
+                                      style: const TextStyle(
+                                        color: Colors.white60,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      
+                      // Reflexión
+                      if (reflection != null && reflection!.isNotEmpty) ...[
+                        _buildInfoSection(
+                          icon: Icons.psychology,
+                          title: 'Pregunta de Reflexión',
+                          content: reflection!,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      
+                      // Fuente
+                      if (source != null && source!.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[850],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(
+                                Icons.book,
+                                color: Colors.white70,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Fuente',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      source!,
+                                      style: const TextStyle(
+                                        color: Colors.white60,
+                                        fontSize: 13,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      
                       const SizedBox(height: 32),
                       // Botón de completar
                       SizedBox(
@@ -478,6 +592,10 @@ class ExerciseDetailScreen extends StatelessWidget {
     required String name,
     required String level,
     required String objective,
+    String? instructions,
+    String? duration,
+    String? reflection,
+    String? source,
     required Color levelColor,
     required IconData levelIcon,
   }) {
@@ -490,6 +608,10 @@ class ExerciseDetailScreen extends StatelessWidget {
           name: name,
           level: level,
           objective: objective,
+          instructions: instructions,
+          duration: duration,
+          reflection: reflection,
+          source: source,
           levelColor: levelColor,
           levelIcon: levelIcon,
         );
