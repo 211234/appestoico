@@ -65,6 +65,15 @@
                 <!-- Acepta URIs que comienzan con "estoico://auth" -->
                 <data android:scheme="estoico" android:host="auth" />
             </intent-filter>
+
+            <!-- Deep linking para suscripción exitosa -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Acepta URIs que comienzan con "stoicapp://subscription-success" -->
+                <data android:scheme="stoicapp" android:host="subscription-success" />
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

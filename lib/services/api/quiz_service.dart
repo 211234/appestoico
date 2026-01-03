@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'local_storage_service.dart';
 import '../offline_service.dart';
 import '../connectivity_service.dart';
+import '../token_expiration_handler.dart';
 
 /// Servicio para gestión de quiz
 class QuizService {
@@ -69,6 +70,15 @@ class QuizService {
       if ((response.statusCode == 200 || response.statusCode == 201) &&
           data['success'] == true) {
         return {'success': true, 'data': data['data']};
+      } else if (response.statusCode == 401) {
+        // Token expirado
+        await TokenExpirationHandler.handleTokenExpiration(401);
+        return {
+          'success': false,
+          'message':
+              'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+          'tokenExpired': true,
+        };
       } else {
         return {
           'success': false,
@@ -113,15 +123,13 @@ class QuizService {
         };
       }
 
-      final response = await http
-          .get(
-            Uri.parse('$baseUrl/quiz/my-quiz'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
+      final response = await http.get(
+        Uri.parse('$baseUrl/quiz/my-quiz'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
 
       if (response.body.isEmpty) {
         return {
@@ -143,6 +151,15 @@ class QuizService {
       if (response.statusCode == 200 && data['success'] == true) {
         await OfflineService.saveQuizData(data['data']);
         return {'success': true, 'data': data['data']};
+      } else if (response.statusCode == 401) {
+        // Token expirado
+        await TokenExpirationHandler.handleTokenExpiration(401);
+        return {
+          'success': false,
+          'message':
+              'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+          'tokenExpired': true,
+        };
       } else {
         return {
           'success': false,

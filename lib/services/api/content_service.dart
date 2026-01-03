@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'local_storage_service.dart';
 import '../offline_service.dart';
 import '../connectivity_service.dart';
+import '../token_expiration_handler.dart';
 
 /// Servicio para contenido general (frases del día, emblemas, etc)
 class ContentService {
@@ -27,15 +28,13 @@ class ContentService {
       final userData = await LocalStorageService.getUserData();
       final token = userData['token'];
 
-      final response = await http
-          .get(
-            Uri.parse('$baseUrl/daily-quote/'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': token != null ? 'Bearer $token' : '',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
+      final response = await http.get(
+        Uri.parse('$baseUrl/daily-quote/'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token != null ? 'Bearer $token' : '',
+        },
+      ).timeout(const Duration(seconds: 10));
 
       if (response.body.isEmpty) {
         return {
@@ -54,6 +53,15 @@ class ContentService {
       if (response.statusCode == 200 && data['success'] == true) {
         await OfflineService.saveDailyQuote(data['data']);
         return {'success': true, 'data': data['data']};
+      } else if (response.statusCode == 401) {
+        // Token expirado
+        await TokenExpirationHandler.handleTokenExpiration(401);
+        return {
+          'success': false,
+          'message':
+              'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+          'tokenExpired': true,
+        };
       } else {
         return {
           'success': false,
