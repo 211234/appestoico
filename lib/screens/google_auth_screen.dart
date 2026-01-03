@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'dart:async';
 import '../services/api_service.dart';
-import 'home_screen.dart';
+import '../main.dart';
 import 'quiz1_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_custom_tabs/flutter_custom_tabs.dart';
 import 'package:app_links/app_links.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class GoogleAuthScreen extends StatefulWidget {
   final String authUrl;
@@ -55,17 +56,25 @@ class _GoogleAuthScreenState extends State<GoogleAuthScreen> {
   }
 
   void _handleDeepLink(Uri uri) {
+    print('🔗 Deep link recibido: $uri');
+    
+    // Manejar deep link de la app: estoico://auth/success?token=...
     if (uri.scheme == 'estoico' && uri.host == 'auth') {
-      if (uri.path.contains('success')) {
+      if (uri.path.contains('success') || uri.queryParameters.containsKey('token')) {
+        print('✅ Procesando autenticación exitosa');
         _handleAuthSuccess(uri.toString());
       } else if (uri.path.contains('error')) {
+        print('❌ Error en autenticación');
         _handleAuthError(uri.toString());
       }
-    } else if (uri.queryParameters.containsKey('token')) {
-      // El backend puede redirigir directamente con el token en los parámetros
+    } 
+    // También manejar si el backend redirige con token en cualquier formato
+    else if (uri.queryParameters.containsKey('token')) {
+      print('✅ Token encontrado en parámetros, procesando...');
       _handleAuthSuccess(uri.toString());
     }
   }
+
 
   Future<void> _initAuth() async {
     try {
@@ -158,6 +167,8 @@ class _GoogleAuthScreenState extends State<GoogleAuthScreen> {
   }
 
   void _handleAuthSuccess(String url) async {
+    print('🔐 Procesando autenticación exitosa desde: $url');
+    
     final uri = Uri.parse(url);
     final token = uri.queryParameters['token'];
     final userId =
@@ -169,31 +180,91 @@ class _GoogleAuthScreenState extends State<GoogleAuthScreen> {
         uri.queryParameters['is_new_user'] == 'true' ||
         uri.queryParameters['isNewUser'] == 'true';
 
-    if (token != null && userId != null) {
-      // Guardar los datos del usuario
-      await ApiService.saveUserData(
-        token: token,
-        userId: userId,
-        nombre: nombre,
-        apellidos: apellidos,
-        email: email,
-      );
+    print('📋 Datos extraídos: token=${token != null ? "✓" : "✗"}, userId=${userId != null ? "✓" : "✗"}, isNewUser=$isNewUser');
 
-      // Navegar al Quiz1 si es nuevo usuario, sino al Home
-      if (mounted) {
-        if (isNewUser) {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const Quiz1Screen()),
-            (route) => false,
-          );
-        } else {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
-            (route) => false,
-          );
+    if (token != null && userId != null) {
+      try {
+        // Guardar los datos básicos del usuario primero
+        await ApiService.saveUserData(
+          token: token,
+          userId: userId,
+          nombre: nombre,
+          apellidos: apellidos,
+          email: email,
+        );
+
+        print('✅ Datos básicos del usuario guardados');
+
+        // Obtener la suscripción del usuario después del login
+        // El backend no devuelve la suscripción en /api/users/me, así que hacemos una petición directa
+        try {
+          // Hacer petición directa a /api/users/me para obtener la suscripción
+          final subscriptionResponse = await http.get(
+            Uri.parse('https://web.estoico.app/api/users/me'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          ).timeout(const Duration(seconds: 10));
+          
+          if (subscriptionResponse.statusCode == 200) {
+            final subscriptionData = json.decode(subscriptionResponse.body);
+            
+            // Intentar obtener la suscripción de diferentes ubicaciones en la respuesta
+            Map<String, dynamic>? subscription;
+            
+            if (subscriptionData['subscription'] != null) {
+              subscription = subscriptionData['subscription'];
+            } else if (subscriptionData['data'] != null && subscriptionData['data']['subscription'] != null) {
+              subscription = subscriptionData['data']['subscription'];
+            } else if (subscriptionData['data'] != null && 
+                       subscriptionData['data']['user'] != null && 
+                       subscriptionData['data']['user']['subscription'] != null) {
+              subscription = subscriptionData['data']['user']['subscription'];
+            }
+            
+            if (subscription != null) {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString('subscription', jsonEncode(subscription));
+              
+              print('✅ Información de suscripción guardada: ${subscription['hasActiveSubscription']}, status: ${subscription['status']}');
+            } else {
+              print('⚠️ El backend no devolvió información de suscripción en /api/users/me');
+              print('⚠️ Esto puede significar que el usuario no tiene suscripción activa o el backend necesita actualizarse');
+            }
+          }
+        } catch (e) {
+          print('⚠️ No se pudo obtener la suscripción, pero el login fue exitoso: $e');
+          // Continuar con el flujo aunque no se haya podido obtener la suscripción
         }
+
+        // Pequeño delay para asegurar que la suscripción se guarde completamente
+        await Future.delayed(const Duration(milliseconds: 300));
+
+        print('✅ Datos del usuario guardados correctamente');
+
+        // Navegar al Quiz1 si es nuevo usuario, sino al Home
+        if (mounted) {
+          if (isNewUser) {
+            print('📝 Usuario nuevo, navegando a Quiz1');
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const Quiz1Screen()),
+              (route) => false,
+            );
+          } else {
+            print('🏠 Usuario existente, navegando a HomePage');
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const HomePage()),
+              (route) => false,
+            );
+          }
+        }
+      } catch (e) {
+        print('❌ Error al guardar datos o navegar: $e');
+        _handleAuthError(url);
       }
     } else {
+      print('❌ Faltan datos requeridos: token o userId');
       _handleAuthError(url);
     }
   }

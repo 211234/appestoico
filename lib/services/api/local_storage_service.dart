@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 /// Servicio para gestionar datos locales del usuario
 class LocalStorageService {
@@ -9,6 +10,7 @@ class LocalStorageService {
     required String nombre,
     required String apellidos,
     required String email,
+    Map<String, dynamic>? subscription,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('token', token);
@@ -16,6 +18,11 @@ class LocalStorageService {
     await prefs.setString('nombre', nombre);
     await prefs.setString('apellidos', apellidos);
     await prefs.setString('email', email);
+    
+    // Guardar información de suscripción si está disponible
+    if (subscription != null) {
+      await prefs.setString('subscription', jsonEncode(subscription));
+    }
   }
 
   // Obtener datos del usuario
@@ -46,5 +53,29 @@ class LocalStorageService {
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('token');
+  }
+
+  // Obtener información de suscripción
+  static Future<Map<String, dynamic>?> getSubscription() async {
+    final prefs = await SharedPreferences.getInstance();
+    final subscriptionStr = prefs.getString('subscription');
+    if (subscriptionStr != null) {
+      try {
+        return jsonDecode(subscriptionStr);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  // Verificar si el usuario tiene suscripción activa
+  static Future<bool> hasActiveSubscription() async {
+    final subscription = await getSubscription();
+    if (subscription != null) {
+      return subscription['hasActiveSubscription'] == true &&
+             subscription['status'] == 'active';
+    }
+    return false;
   }
 }
