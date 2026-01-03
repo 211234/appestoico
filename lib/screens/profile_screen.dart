@@ -41,6 +41,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (_userData != null && !_isLoading) {
       _checkAndLoadProgress();
     }
+    // También verificar el estado premium si aún no se ha verificado
+    // Esto asegura que se detecte el premium después del login con Google
+    if (!_isLoading && _userData != null && !_isPremium) {
+      _checkAndLoadProgress();
+    }
   }
 
   Future<void> _loadUserData() async {
