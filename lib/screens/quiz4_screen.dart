@@ -234,7 +234,7 @@ class _Quiz4ScreenState extends State<Quiz4Screen> {
 
                       ...goals.map((goal) {
                         final isSelected = selectedGoals.contains(
-                          goal['title'],
+                          goal['key'],
                         );
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 16),

@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'local_storage_service.dart';
 import '../offline_service.dart';
 import '../connectivity_service.dart';
+import '../token_expiration_handler.dart';
 import '../../models/reflection.dart';
 
 /// Servicio para gestión del diario (reflexiones)
@@ -21,15 +22,13 @@ class DiaryService {
         };
       }
 
-      final response = await http
-          .get(
-            Uri.parse('$baseUrl/diario/all'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
+      final response = await http.get(
+        Uri.parse('$baseUrl/diario/all'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
 
       if (response.body.isEmpty) {
         return {
@@ -48,13 +47,21 @@ class DiaryService {
       if (response.statusCode == 200) {
         if (data['data'] != null && data['data'] is List) {
           final List<dynamic> reflectionsJson = data['data'];
-          final List<Reflection> reflections = reflectionsJson
-              .map((json) => Reflection.fromJson(json))
-              .toList();
+          final List<Reflection> reflections =
+              reflectionsJson.map((json) => Reflection.fromJson(json)).toList();
           return {'success': true, 'data': reflections};
         } else {
           return {'success': true, 'data': []};
         }
+      } else if (response.statusCode == 401) {
+        // Token expirado
+        await TokenExpirationHandler.handleTokenExpiration(401);
+        return {
+          'success': false,
+          'message':
+              'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+          'tokenExpired': true,
+        };
       } else {
         return {
           'success': false,
@@ -78,15 +85,13 @@ class DiaryService {
         };
       }
 
-      final response = await http
-          .get(
-            Uri.parse('$baseUrl/diario?date=$date'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
+      final response = await http.get(
+        Uri.parse('$baseUrl/diario?date=$date'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
 
       if (response.body.isEmpty) {
         return {
@@ -108,6 +113,15 @@ class DiaryService {
         } else {
           return {'success': true, 'data': null};
         }
+      } else if (response.statusCode == 401) {
+        // Token expirado
+        await TokenExpirationHandler.handleTokenExpiration(401);
+        return {
+          'success': false,
+          'message':
+              'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+          'tokenExpired': true,
+        };
       } else {
         return {
           'success': false,
@@ -178,6 +192,15 @@ class DiaryService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return {'success': true, 'data': data};
+      } else if (response.statusCode == 401) {
+        // Token expirado
+        await TokenExpirationHandler.handleTokenExpiration(401);
+        return {
+          'success': false,
+          'message':
+              'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+          'tokenExpired': true,
+        };
       } else {
         return {
           'success': false,
@@ -213,16 +236,14 @@ class DiaryService {
         };
       }
 
-      final response = await http
-          .delete(
-            Uri.parse('$baseUrl/diario/$id'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $token',
-              'ngrok-skip-browser-warning': 'true',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
+      final response = await http.delete(
+        Uri.parse('$baseUrl/diario/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+          'ngrok-skip-browser-warning': 'true',
+        },
+      ).timeout(const Duration(seconds: 10));
 
       if (response.body.isEmpty) {
         return {
@@ -242,6 +263,15 @@ class DiaryService {
         return {
           'success': true,
           'message': data['message'] ?? 'Reflexión eliminada correctamente',
+        };
+      } else if (response.statusCode == 401) {
+        // Token expirado
+        await TokenExpirationHandler.handleTokenExpiration(401);
+        return {
+          'success': false,
+          'message':
+              'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+          'tokenExpired': true,
         };
       } else {
         return {
@@ -323,6 +353,15 @@ class DiaryService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return {'success': true, 'data': data};
+      } else if (response.statusCode == 401) {
+        // Token expirado
+        await TokenExpirationHandler.handleTokenExpiration(401);
+        return {
+          'success': false,
+          'message':
+              'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+          'tokenExpired': true,
+        };
       } else {
         return {
           'success': false,

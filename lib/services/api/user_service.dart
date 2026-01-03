@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'local_storage_service.dart';
 import '../offline_service.dart';
 import '../connectivity_service.dart';
+import '../token_expiration_handler.dart';
 
 /// Servicio para gestión del perfil del usuario
 class UserService {
@@ -33,15 +34,13 @@ class UserService {
         };
       }
 
-      final response = await http
-          .get(
-            Uri.parse('$baseUrl/users/me'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/me'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
 
       if (response.body.isEmpty) {
         return {
@@ -74,6 +73,15 @@ class UserService {
             'message': 'El perfil está vacío. Por favor completa el quiz.',
           };
         }
+      } else if (response.statusCode == 401) {
+        // Token expirado
+        await TokenExpirationHandler.handleTokenExpiration(401);
+        return {
+          'success': false,
+          'message':
+              'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+          'tokenExpired': true,
+        };
       } else {
         return {
           'success': false,
@@ -145,6 +153,15 @@ class UserService {
           'success': true,
           'message': data['message'] ?? 'Información actualizada correctamente',
           'data': data['data'],
+        };
+      } else if (response.statusCode == 401) {
+        // Token expirado
+        await TokenExpirationHandler.handleTokenExpiration(401);
+        return {
+          'success': false,
+          'message':
+              'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+          'tokenExpired': true,
         };
       } else {
         return {
@@ -222,6 +239,15 @@ class UserService {
           'success': true,
           'message': data['message'] ?? 'Perfil actualizado correctamente',
           'data': data['data'],
+        };
+      } else if (response.statusCode == 401) {
+        // Token expirado
+        await TokenExpirationHandler.handleTokenExpiration(401);
+        return {
+          'success': false,
+          'message':
+              'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+          'tokenExpired': true,
         };
       } else {
         print('❌ Error del servidor: ${response.statusCode}');
