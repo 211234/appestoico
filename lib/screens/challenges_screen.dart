@@ -30,6 +30,16 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Recargar estado premium cuando se vuelve a esta pantalla
+    // Esto asegura que se detecte el premium después del login con Google
+    if (!_isLoading && !_isPremium) {
+      _checkPremiumStatus();
+    }
+  }
+
+  @override
   void dispose() {
     _streamSubscription?.cancel();
     super.dispose();
@@ -53,6 +63,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
       if (subscriptionStr != null) {
         try {
           final subscription = json.decode(subscriptionStr);
+          
           print('🔍 Suscripción local completa: $subscription');
           print('🔍 hasActiveSubscription: ${subscription['hasActiveSubscription']}');
           print('🔍 status: ${subscription['status']}');
@@ -90,11 +101,13 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
             
             if (response.statusCode == 200) {
               final data = json.decode(response.body);
+              
               print('🔍 Respuesta completa del servidor: $data');
               
               // Verificar si hay información de suscripción en la respuesta
               if (data['subscription'] != null) {
                 final subscription = data['subscription'];
+                
                 print('🔍 Suscripción del servidor: $subscription');
                 
                 // Guardar la suscripción localmente
@@ -104,16 +117,33 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                            subscription['status'] == 'active';
                 
                 print('🔍 isPremium desde servidor: $isPremium');
-              } else if (data['data'] != null && data['data']['subscription'] != null) {
-                final subscription = data['data']['subscription'];
-                print('🔍 Suscripción en data.subscription: $subscription');
-                
-                await prefs.setString('subscription', jsonEncode(subscription));
-                
-                isPremium = subscription['hasActiveSubscription'] == true &&
-                           subscription['status'] == 'active';
-                
-                print('🔍 isPremium desde data.subscription: $isPremium');
+              } else if (data['data'] != null) {
+                // Verificar en diferentes niveles de data
+                if (data['data']['subscription'] != null) {
+                  final subscription = data['data']['subscription'];
+                  
+                  print('🔍 Suscripción en data.subscription: $subscription');
+                  
+                  await prefs.setString('subscription', jsonEncode(subscription));
+                  
+                  isPremium = subscription['hasActiveSubscription'] == true &&
+                             subscription['status'] == 'active';
+                  
+                  print('🔍 isPremium desde data.subscription: $isPremium');
+                } else if (data['data']['user'] != null && data['data']['user']['subscription'] != null) {
+                  final subscription = data['data']['user']['subscription'];
+                  
+                  print('🔍 Suscripción en data.user.subscription: $subscription');
+                  
+                  await prefs.setString('subscription', jsonEncode(subscription));
+                  
+                  isPremium = subscription['hasActiveSubscription'] == true &&
+                             subscription['status'] == 'active';
+                  
+                  print('🔍 isPremium desde data.user.subscription: $isPremium');
+                } else {
+                  print('⚠️ No se encontró suscripción en la respuesta del servidor');
+                }
               }
             }
           }
@@ -156,6 +186,44 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                          userData['is_premium'] == 1;
               
               print('🔍 isPremium desde perfil: $isPremium');
+            }
+          }
+          
+          // WORKAROUND: Si el backend no devuelve la suscripción pero el usuario puede acceder
+          // a funciones premium, intentar hacer una petición a /api/challenges/progress
+          // Si la petición es exitosa, significa que el usuario es premium
+          if (!isPremium) {
+            try {
+              final progressToken = prefs.getString('token');
+              if (progressToken != null && progressToken.isNotEmpty) {
+                final progressResponse = await http.get(
+                  Uri.parse('https://web.estoico.app/api/challenges/progress'),
+                  headers: {
+                    'Authorization': 'Bearer $progressToken',
+                    'Content-Type': 'application/json',
+                  },
+                ).timeout(const Duration(seconds: 10));
+              
+                // Si la petición es exitosa (200), el usuario es premium
+                if (progressResponse.statusCode == 200) {
+                  print('✅ Usuario es premium (verificado mediante /api/challenges/progress)');
+                isPremium = true;
+                
+                // Crear una suscripción mock para guardar localmente
+                final mockSubscription = {
+                  'hasActiveSubscription': true,
+                  'status': 'active',
+                };
+                await prefs.setString('subscription', jsonEncode(mockSubscription));
+                  print('✅ Suscripción mock guardada localmente');
+                } else {
+                  print('❌ Usuario no es premium (statusCode: ${progressResponse.statusCode})');
+              }
+              } else {
+                print('⚠️ No se encontró token para verificar premium');
+              }
+            } catch (e) {
+              print('⚠️ Error al verificar premium: $e');
             }
           }
         }
