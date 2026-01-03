@@ -8,6 +8,9 @@ import 'screens/home_screen.dart';
 import 'screens/guide_screen.dart';
 import 'screens/challenges_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/subscription_success_screen.dart';
+import 'package:app_links/app_links.dart';
+import 'dart:async';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +27,7 @@ void main() async {
   runApp(const EstoicoApp());
 }
 
-class EstoicoApp extends StatelessWidget {
+class EstoicoApp extends StatefulWidget {
   const EstoicoApp({Key? key}) : super(key: key);
 
   static final GlobalKey<NavigatorState> _navigatorKey =
@@ -35,19 +38,65 @@ class EstoicoApp extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    // Inicializar el manejador de expiración de tokens
-    _initializeTokenHandler();
+  State<EstoicoApp> createState() => _EstoicoAppState();
+}
 
+class _EstoicoAppState extends State<EstoicoApp> {
+  StreamSubscription? _deepLinkSubscription;
+  final AppLinks _appLinks = AppLinks();
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeDeepLinks();
+    EstoicoApp._initializeTokenHandler();
+  }
+
+  void _initializeDeepLinks() {
+    // Escuchar deep links en tiempo real
+    _deepLinkSubscription = _appLinks.uriLinkStream.listen(
+      (Uri uri) {
+        _handleDeepLink(uri);
+      },
+      onError: (err) {
+        print('Error al procesar deep link: $err');
+      },
+    );
+  }
+
+  void _handleDeepLink(Uri uri) {
+    print('Deep link recibido: ${uri.toString()}');
+
+    if (uri.host == 'subscription-success') {
+      // Redirigir a la pantalla de suscripción exitosa
+      EstoicoApp._navigatorKey.currentState?.pushNamedAndRemoveUntil(
+        '/subscription-success',
+        (route) => false,
+      );
+    } else if (uri.host == 'auth') {
+      // Manejar auth callbacks
+      EstoicoApp._navigatorKey.currentState?.pushNamed('/login');
+    }
+  }
+
+  @override
+  void dispose() {
+    _deepLinkSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
-      navigatorKey: _navigatorKey,
+      navigatorKey: EstoicoApp._navigatorKey,
       home: const SplashScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomePage(),
         '/splash': (context) => const SplashScreen(),
+        '/subscription-success': (context) => const SubscriptionSuccessScreen(),
       },
     );
   }
