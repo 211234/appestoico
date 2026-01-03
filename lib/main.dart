@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'services/notification_service.dart';
 import 'services/connectivity_service.dart';
+import 'services/token_expiration_handler.dart';
 import 'screens/splash_screen.dart';
+import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/guide_screen.dart';
 import 'screens/challenges_screen.dart';
@@ -25,12 +27,28 @@ void main() async {
 class EstoicoApp extends StatelessWidget {
   const EstoicoApp({Key? key}) : super(key: key);
 
+  static final GlobalKey<NavigatorState> _navigatorKey =
+      GlobalKey<NavigatorState>();
+
+  static void _initializeTokenHandler() {
+    TokenExpirationHandler.initialize(_navigatorKey);
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Inicializar el manejador de expiración de tokens
+    _initializeTokenHandler();
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
+      navigatorKey: _navigatorKey,
       home: const SplashScreen(),
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/home': (context) => const HomePage(),
+        '/splash': (context) => const SplashScreen(),
+      },
     );
   }
 }
