@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'local_storage_service.dart';
 import '../offline_service.dart';
 import '../connectivity_service.dart';
@@ -58,16 +59,38 @@ class UserService {
       }
 
       if (response.statusCode == 200) {
+        // Guardar suscripción si está presente en la respuesta
+        if (data['subscription'] != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('subscription', jsonEncode(data['subscription']));
+        }
+        
         if (data['success'] == true && data['data'] != null) {
           final profileData = data['data']['user'] ?? data['data'];
           await OfflineService.saveUserProfile(profileData);
 
+          // Incluir suscripción en la respuesta si está disponible
+          final result = <String, dynamic>{};
           if (data['data']['user'] != null) {
-            return {'success': true, 'data': data['data']['user']};
+            result['success'] = true;
+            result['data'] = data['data']['user'];
+          } else {
+            result['success'] = true;
+            result['data'] = data['data'];
           }
-          return {'success': true, 'data': data['data']};
+          
+          // Agregar suscripción a la respuesta si existe
+          if (data['subscription'] != null) {
+            result['subscription'] = data['subscription'];
+          }
+          
+          return result;
         } else if (data['nombre'] != null || data['email'] != null) {
-          return {'success': true, 'data': data};
+          final result = {'success': true, 'data': data};
+          if (data['subscription'] != null) {
+            result['subscription'] = data['subscription'];
+          }
+          return result;
         } else {
           return {
             'success': false,

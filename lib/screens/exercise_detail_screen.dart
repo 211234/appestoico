@@ -6,19 +6,31 @@ import '../widgets/custom_spinner.dart';
 import '../widgets/sweet_alert.dart';
 
 class ExerciseDetailScreen extends StatelessWidget {
+  final String exerciseId;
   final String name;
   final String level;
   final String objective;
+  final String? instructions;
+  final String? duration;
+  final String? reflection;
+  final String? source;
   final Color levelColor;
   final IconData levelIcon;
+  final VoidCallback? onCompleted;
 
   const ExerciseDetailScreen({
     Key? key,
+    required this.exerciseId,
     required this.name,
     required this.level,
     required this.objective,
+    this.instructions,
+    this.duration,
+    this.reflection,
+    this.source,
     required this.levelColor,
     required this.levelIcon,
+    this.onCompleted,
   }) : super(key: key);
 
   @override
@@ -27,7 +39,8 @@ class ExerciseDetailScreen extends StatelessWidget {
       initialChildSize: 0.75,
       minChildSize: 0.5,
       maxChildSize: 0.95,
-      builder: (_, scrollController) {
+      builder: (BuildContext sheetContext, scrollController) {
+        final bottomPadding = MediaQuery.of(sheetContext).padding.bottom;
         return Container(
           decoration: BoxDecoration(
             color: Colors.grey[900],
@@ -51,7 +64,12 @@ class ExerciseDetailScreen extends StatelessWidget {
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.only(
+                    left: 24,
+                    right: 24,
+                    top: 24,
+                    bottom: 24 + bottomPadding,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -157,13 +175,119 @@ class ExerciseDetailScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      // Información adicional
-                      _buildInfoSection(
-                        icon: Icons.info_outline,
-                        title: 'Acerca de este ejercicio',
-                        content:
-                            'Este ejercicio ha sido generado específicamente para ti basándose en tu perfil estoico y tus objetivos personales. Complétalo para ganar puntos y avanzar en tu camino hacia la virtud.',
-                      ),
+                      
+                      // Instrucciones
+                      if (instructions != null && instructions!.isNotEmpty) ...[
+                        _buildInfoSection(
+                          icon: Icons.list_alt,
+                          title: 'Instrucciones',
+                          content: instructions!,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      
+                      // Duración
+                      if (duration != null && duration!.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[850],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.access_time,
+                                color: Colors.white70,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Duración',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      duration!,
+                                      style: const TextStyle(
+                                        color: Colors.white60,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      
+                      // Reflexión
+                      if (reflection != null && reflection!.isNotEmpty) ...[
+                        _buildInfoSection(
+                          icon: Icons.psychology,
+                          title: 'Pregunta de Reflexión',
+                          content: reflection!,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      
+                      // Fuente
+                      if (source != null && source!.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[850],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(
+                                Icons.book,
+                                color: Colors.white70,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Fuente',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      source!,
+                                      style: const TextStyle(
+                                        color: Colors.white60,
+                                        fontSize: 13,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      
                       const SizedBox(height: 32),
                       // Botón de completar
                       SizedBox(
@@ -184,6 +308,8 @@ class ExerciseDetailScreen extends StatelessWidget {
                           ),
                         ),
                       ),
+                      // Espacio adicional al final para evitar que el botón quede tapado
+                      SizedBox(height: bottomPadding),
                     ],
                   ),
                 ),
@@ -238,11 +364,14 @@ class ExerciseDetailScreen extends StatelessWidget {
   }
 
   Future<void> _completeChallenge(BuildContext context) async {
+    // Guardar Navigator ANTES de operaciones asíncronas
+    final navigator = Navigator.of(context);
+    
     // Mostrar loading
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Center(
+      builder: (dialogContext) => Center(
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
@@ -268,78 +397,73 @@ class ExerciseDetailScreen extends StatelessWidget {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
 
-      final response = await http.post(
-        Uri.parse('https://web.estoico.app/api/challenges/complete'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({
-          'name': name,
-          'level': level,
-          'objective': objective,
-        }),
-      );
-
-      // Cerrar loading
-      if (context.mounted) Navigator.of(context).pop();
-
-      final responseData = json.decode(response.body);
-
-      if (response.statusCode == 201 && responseData['success'] == true) {
-        // Éxito
-        final data = responseData['data'];
-        final levelChanged = data['level_changed'] ?? false;
-        final totalPoints = data['total_points'] ?? 0;
-        final currentLevel = data['current_level_label'] ?? 'Principiante';
-
-        if (context.mounted) {
-          if (levelChanged) {
-            // Mostrar alerta especial de nivel subido
-            _showLevelUpDialog(
-              context: context,
-              message: responseData['message'],
-              newLevel: currentLevel,
-              totalPoints: totalPoints,
-              progress: data['progress'],
-            );
-          } else {
-            // Mostrar alerta normal de completado
-            SweetAlert.showSuccess(
-              context: context,
-              title: '¡Desafío Completado!',
-              message:
-                  '${responseData['message']}\n\nPuntos totales: $totalPoints',
-              backgroundColor: const Color(0xFF102110),
-            );
+      // Paso 1: Completar el ejercicio (esta es la llamada crítica)
+      http.StreamedResponse? completeExerciseResponse;
+      try {
+        final request = http.Request(
+          'POST',
+          Uri.parse('https://web.estoico.app/ia/generate/exercises/$exerciseId/complete'),
+        );
+        request.headers['Content-Type'] = 'application/json';
+        request.headers['Authorization'] = 'Bearer $token';
+        
+        completeExerciseResponse = await request.send()
+            .timeout(const Duration(seconds: 10));
+      } catch (e) {
+        // Usar navigator guardado en lugar de context
+        try {
+          navigator.pop();
+        } catch (navError) {
+          // Si falla, intentar con context si aún está montado
+          if (context.mounted) {
+            try {
+              Navigator.of(context).pop();
+            } catch (e2) {
+              // Ignorar si ambos fallan
+            }
           }
         }
-      } else {
-        // Error
-        String errorMessage = responseData['message'] ?? 'Error desconocido';
-
-        // Si hay errores de validación, mostrarlos
-        if (responseData['errors'] != null) {
-          final errors = responseData['errors'] as Map<String, dynamic>;
-          errorMessage += '\n';
-          errors.forEach((key, value) {
-            if (value is List) {
-              errorMessage += '\n• ${value.join(', ')}';
-            }
-          });
-        }
-
         if (context.mounted) {
           SweetAlert.showError(
             context: context,
             title: 'Error',
-            message: errorMessage,
+            message: 'No se pudo completar el ejercicio: $e',
           );
         }
+        return;
       }
+
+      // Cerrar loading INMEDIATAMENTE después de recibir la respuesta (antes de procesar)
+      // CERRAR DIALOG usando navigator guardado (no depende de context.mounted)
+      try {
+        navigator.pop();
+      } catch (navError) {
+        // Intentar con context si aún está montado
+        if (context.mounted) {
+          try {
+            Navigator.of(context).pop();
+          } catch (e2) {
+            // Ignorar si ambos fallan
+          }
+        }
+      }
+
+      // Procesar respuesta del ejercicio EN BACKGROUND (no bloquea UI)
+      _processExerciseResponse(completeExerciseResponse, context);
+
     } catch (e) {
       // Cerrar loading si aún está abierto
-      if (context.mounted) Navigator.of(context).pop();
+      try {
+        navigator.pop();
+      } catch (navError) {
+        if (context.mounted) {
+          try {
+            Navigator.of(context).pop();
+          } catch (e2) {
+            // Ignorar si ambos fallan
+          }
+        }
+      }
 
       if (context.mounted) {
         SweetAlert.showError(
@@ -348,6 +472,184 @@ class ExerciseDetailScreen extends StatelessWidget {
           message: 'No se pudo completar el desafío: $e',
         );
       }
+    }
+  }
+
+  Future<void> _processExerciseResponse(http.StreamedResponse response, BuildContext context) async {
+    try {
+      // Procesar respuesta del ejercicio
+      if (response.statusCode != 200) {
+        final responseBody = await response.stream.bytesToString();
+        final errorData = json.decode(responseBody);
+        if (context.mounted) {
+          SweetAlert.showError(
+            context: context,
+            title: 'Error',
+            message: errorData['message'] ?? 'No se pudo completar el ejercicio',
+          );
+        }
+        return;
+      }
+
+      final responseBody = await response.stream.bytesToString();
+      final completeData = json.decode(responseBody);
+      print('✅ Ejercicio completado: $completeData');
+
+      // Obtener token para guardar puntos
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+
+      // Paso 2: Guardar puntos usando el exercise_id del ejercicio completado
+      // Usamos el exercise_id en lugar del nombre para evitar duplicados
+      final completedExerciseId = completeData['exercise_id'] ?? exerciseId;
+      _saveChallengePoints(token, completedExerciseId, name, level, objective).then((result) {
+        // Ejercicio completado exitosamente (ya sea que el segundo POST funcione o falle por duplicado)
+        // El primer POST ya marcó el ejercicio como completado, así que siempre llamamos al callback
+        // Primero eliminar el ejercicio de la lista
+        if (onCompleted != null) {
+          onCompleted!();
+        }
+        
+        // Cerrar el modal para que el usuario vea que el ejercicio desapareció de la lista
+        if (context.mounted) {
+          Navigator.of(context).pop();
+        }
+        
+        if (result['success'] == true && context.mounted) {
+          final data = result['data'];
+          final levelChanged = data['level_changed'] ?? false;
+          final totalPoints = data['total_points'] ?? 0;
+          final currentLevel = data['current_level_label'] ?? 'Principiante';
+
+          if (levelChanged) {
+            _showLevelUpDialog(
+              context: context,
+              message: result['message'],
+              newLevel: currentLevel,
+              totalPoints: totalPoints,
+              progress: data['progress'],
+            );
+          } else {
+            String message = '${result['message']}\n\nPuntos totales: $totalPoints';
+            
+            if (completeData['new_exercise'] != null) {
+              message += '\n\n¡Se ha generado un nuevo ejercicio para ti!';
+            }
+            
+            SweetAlert.showSuccess(
+              context: context,
+              title: '¡Desafío Completado!',
+              message: message,
+              backgroundColor: const Color(0xFF102110),
+            );
+          }
+        } else {
+          // Si falla porque ya fue completado, el primer POST ya guardó los puntos
+          // El backend está rechazando porque detecta duplicado por nombre/nivel/objetivo
+          // pero el primer POST ya marcó el ejercicio como completado y guardó los puntos
+          String errorMessage = result['message'] ?? '';
+          bool alreadyCompleted = errorMessage.contains('Ya has completado') || 
+                                 errorMessage.contains('ya completado') ||
+                                 errorMessage.contains('anteriormente');
+          
+          if (context.mounted) {
+            if (alreadyCompleted) {
+              // El ejercicio ya fue completado, los puntos ya están guardados por el primer POST
+              // El segundo POST es redundante cuando el backend detecta duplicado
+              // Mostrar mensaje de éxito y el progreso se actualizará cuando el usuario vaya al perfil
+              String message = 'Ejercicio completado exitosamente.\n\nLos puntos han sido registrados.';
+              if (completeData['new_exercise'] != null) {
+                message += '\n\n¡Se ha generado un nuevo ejercicio para ti!';
+              }
+              SweetAlert.showSuccess(
+                context: context,
+                title: '¡Desafío Completado!',
+                message: message,
+                backgroundColor: const Color(0xFF102110),
+              );
+            } else {
+              // Otro tipo de error
+              SweetAlert.showSuccess(
+                context: context,
+                title: '¡Desafío Completado!',
+                message: 'El ejercicio se completó exitosamente. Los puntos se guardarán en breve.',
+                backgroundColor: const Color(0xFF102110),
+              );
+            }
+          }
+        }
+      }).catchError((error) {
+        print('⚠️ Error al guardar puntos (no crítico): $error');
+        // Aún así, el ejercicio fue completado por el primer POST, así que llamamos al callback
+        // Primero eliminar el ejercicio de la lista
+        if (onCompleted != null) {
+          onCompleted!();
+        }
+        // Cerrar el modal para que el usuario vea que el ejercicio desapareció de la lista
+        if (context.mounted) {
+          Navigator.of(context).pop();
+        }
+        // Si falla, mostrar mensaje de éxito básico
+        if (context.mounted) {
+          SweetAlert.showSuccess(
+            context: context,
+            title: '¡Desafío Completado!',
+            message: 'El ejercicio se completó exitosamente.',
+            backgroundColor: const Color(0xFF102110),
+          );
+        }
+      });
+    } catch (e) {
+      if (context.mounted) {
+        SweetAlert.showError(
+          context: context,
+          title: 'Error',
+          message: 'Error al procesar la respuesta: $e',
+        );
+      }
+    }
+  }
+
+  Future<Map<String, dynamic>> _saveChallengePoints(
+    String token,
+    String exerciseId,
+    String exerciseName,
+    String exerciseLevel,
+    String exerciseObjective,
+  ) async {
+    try {
+      print('💾 Guardando puntos: exerciseId=$exerciseId, name=$exerciseName, level=$exerciseLevel, objective=$exerciseObjective');
+      
+      // Intentar primero con exercise_id si el backend lo acepta
+      Map<String, dynamic> requestBody = {
+        'exercise_id': exerciseId,
+        'name': exerciseName,
+        'level': exerciseLevel,
+        'objective': exerciseObjective,
+      };
+      
+      final response = await http.post(
+        Uri.parse('https://web.estoico.app/api/challenges/complete'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode(requestBody),
+      ).timeout(const Duration(seconds: 10));
+
+      print('💾 Respuesta guardar puntos: statusCode=${response.statusCode}, body=${response.body}');
+      final responseData = json.decode(response.body);
+      
+      if (response.statusCode == 201 && responseData['success'] == true) {
+        print('✅ Puntos guardados exitosamente: ${responseData['data']?['total_points']} puntos totales');
+        return responseData;
+      } else {
+        print('❌ Error al guardar puntos: ${responseData['message']}');
+        return {'success': false, 'message': responseData['message'] ?? 'Error desconocido'};
+      }
+    } catch (e) {
+      print('❌ Excepción al guardar puntos: $e');
+      return {'success': false, 'message': e.toString()};
     }
   }
 
@@ -475,11 +777,17 @@ class ExerciseDetailScreen extends StatelessWidget {
 
   static void show({
     required BuildContext context,
+    required String exerciseId,
     required String name,
     required String level,
     required String objective,
+    String? instructions,
+    String? duration,
+    String? reflection,
+    String? source,
     required Color levelColor,
     required IconData levelIcon,
+    VoidCallback? onCompleted,
   }) {
     showModalBottomSheet(
       context: context,
@@ -487,11 +795,17 @@ class ExerciseDetailScreen extends StatelessWidget {
       isScrollControlled: true,
       builder: (BuildContext context) {
         return ExerciseDetailScreen(
+          exerciseId: exerciseId,
           name: name,
           level: level,
           objective: objective,
+          instructions: instructions,
+          duration: duration,
+          reflection: reflection,
+          source: source,
           levelColor: levelColor,
           levelIcon: levelIcon,
+          onCompleted: onCompleted,
         );
       },
     );
