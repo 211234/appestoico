@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:http/http.dart' as http;
 import '../services/api_service.dart';
 import '../services/notification_service.dart';
 import '../services/offline_service.dart';
@@ -20,13 +23,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = true;
   Map<String, dynamic>? _userData;
   Map<String, dynamic>? _quizData;
+  Map<String, dynamic>? _challengeProgress;
   TimeOfDay _notificationTime = const TimeOfDay(hour: 8, minute: 0);
+  bool _isPremium = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
     _loadNotificationTime();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Recargar progreso cuando se vuelve a esta pantalla (solo si ya se cargó el perfil)
+    if (_userData != null && !_isLoading) {
+      _checkAndLoadProgress();
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -49,6 +63,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _isLoading = false;
         });
       }
+
+      // Si es premium, cargar el progreso de desafíos
+      await _checkAndLoadProgress();
     } else {
       setState(() {
         _isLoading = false;
@@ -87,6 +104,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() {
       _notificationTime = TimeOfDay(hour: hour, minute: minute);
     });
+  }
+
+  Future<void> _checkAndLoadProgress() async {
+    try {
+      // Verificar si el usuario es premium
+      final prefs = await SharedPreferences.getInstance();
+      final subscriptionStr = prefs.getString('subscription');
+      
+      bool isPremium = false;
+      
+      if (subscriptionStr != null) {
+        try {
+          final subscription = json.decode(subscriptionStr);
+          isPremium = subscription['hasActiveSubscription'] == true &&
+                     subscription['status'] == 'active';
+        } catch (e) {
+          print('Error al parsear suscripción: $e');
+        }
+      }
+
+      // Si no es premium desde local, verificar en el perfil
+      if (!isPremium && _userData != null) {
+        isPremium = _userData!['isPremium'] == true ||
+                   _userData!['is_premium'] == true ||
+                   _userData!['premium'] == true ||
+                   _userData!['subscription_active'] == true ||
+                   _userData!['has_premium'] == true;
+      }
+
+      // Guardar el estado premium
+      setState(() {
+        _isPremium = isPremium;
+      });
+
+      // Si es premium, cargar el progreso
+      if (isPremium) {
+        await _loadChallengeProgress();
+      }
+    } catch (e) {
+      print('Error al verificar premium y cargar progreso: $e');
+    }
+  }
+
+  Future<void> _loadChallengeProgress() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+
+      if (token.isEmpty) return;
+
+      final response = await http.get(
+        Uri.parse('https://web.estoico.app/api/challenges/progress'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        print('📊 Progreso recibido del servidor: $responseData');
+        if (responseData['success'] == true && responseData['data'] != null) {
+          setState(() {
+            _challengeProgress = responseData['data'];
+          });
+          print('✅ Progreso actualizado en UI: ${_challengeProgress?['current_points']} puntos, nivel: ${_challengeProgress?['current_level_label']}');
+        } else {
+          print('⚠️ Respuesta sin datos válidos: ${responseData['message'] ?? 'Sin mensaje'}');
+        }
+      } else {
+        print('❌ Error HTTP al obtener progreso: ${response.statusCode}');
+        print('❌ Cuerpo de respuesta: ${response.body}');
+      }
+    } catch (e) {
+      print('❌ Excepción al cargar progreso de desafíos: $e');
+    }
   }
 
   Future<void> _changeNotificationTime() async {
@@ -572,6 +665,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       const SizedBox(height: 32),
 
+                      // Card: Progreso de Desafíos (solo si es premium)
+                      if (_challengeProgress != null) ...[
+                        _buildChallengeProgressCard(),
+                        const SizedBox(height: 32),
+                      ],
+
                       // Card: Perfil Estoico
                       Container(
                         width: double.infinity,
@@ -740,109 +839,111 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       const SizedBox(height: 32),
 
-                      // Botón Premium
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.amber.shade400,
-                              Colors.orange.shade600,
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.orange.withOpacity(0.3),
-                              blurRadius: 15,
-                              spreadRadius: 2,
+                      // Botón Premium (solo si NO es premium)
+                      if (!_isPremium) ...[
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.amber.shade400,
+                                Colors.orange.shade600,
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
-                          ],
-                        ),
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
-                                    shape: BoxShape.circle,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.orange.withOpacity(0.3),
+                                blurRadius: 15,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.2),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.workspace_premium,
+                                      color: Colors.white,
+                                      size: 32,
+                                    ),
                                   ),
-                                  child: const Icon(
-                                    Icons.workspace_premium,
-                                    color: Colors.white,
-                                    size: 32,
+                                  const SizedBox(width: 16),
+                                  const Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Estoica Premium',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        SizedBox(height: 4),
+                                        Text(
+                                          'Desbloquea todo el contenido',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 16),
-                                const Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: _showPremiumDialog,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
-                                        'Estoica Premium',
+                                        'Hacerse Premium',
                                         style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 20,
+                                          color: Colors.orange.shade700,
+                                          fontSize: 16,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        'Desbloquea todo el contenido',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                        ),
+                                      const SizedBox(width: 8),
+                                      Icon(
+                                        Icons.open_in_new,
+                                        color: Colors.orange.shade700,
+                                        size: 20,
                                       ),
                                     ],
                                   ),
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: _showPremiumDialog,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 14,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      'Hacerse Premium',
-                                      style: TextStyle(
-                                        color: Colors.orange.shade700,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Icon(
-                                      Icons.open_in_new,
-                                      color: Colors.orange.shade700,
-                                      size: 20,
-                                    ),
-                                  ],
-                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
+                      ],
 
                       const SizedBox(height: 24),
 
@@ -1186,6 +1287,199 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildChallengeProgressCard() {
+    if (_challengeProgress == null) return const SizedBox.shrink();
+
+    final currentLevel = _challengeProgress!['current_level_label'] ?? 'Principiante';
+    final currentPoints = _challengeProgress!['current_points'] ?? 0;
+    final nextLevel = _challengeProgress!['next_level'];
+    
+    int pointsNeeded = 0;
+    String nextLevelLabel = 'Nivel máximo alcanzado';
+    
+    if (nextLevel != null) {
+      pointsNeeded = nextLevel['points_needed'] ?? 0;
+      nextLevelLabel = nextLevel['next_level_label'] ?? 'Siguiente nivel';
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.orange.withOpacity(0.2),
+            Colors.deepOrange.withOpacity(0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.emoji_events,
+                  color: Colors.orange,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Progreso de Desafíos',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Nivel: $currentLevel',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          // Puntos actuales
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Puntos actuales',
+                    style: TextStyle(
+                      color: Colors.white60,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$currentPoints',
+                    style: const TextStyle(
+                      color: Colors.orange,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              if (nextLevel != null)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text(
+                      'Puntos faltantes',
+                      style: TextStyle(
+                        color: Colors.white60,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$pointsNeeded',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+          if (nextLevel != null) ...[
+            const SizedBox(height: 16),
+            // Barra de progreso
+            Container(
+              height: 8,
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: (currentPoints / (currentPoints + pointsNeeded)).clamp(0.0, 1.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.orange, Colors.deepOrange],
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Siguiente nivel
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: (Colors.grey[900] ?? Colors.grey).withOpacity(0.5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.arrow_upward,
+                    color: Colors.orange,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Siguiente nivel',
+                          style: TextStyle(
+                            color: Colors.white60,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          nextLevelLabel,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

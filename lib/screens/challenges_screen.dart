@@ -168,10 +168,10 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
         _isLoading = false;
       });
 
-      // Si es premium, generar ejercicios automáticamente
+      // Si es premium, cargar ejercicios pendientes primero
       if (_isPremium) {
-        print('✅ Usuario premium detectado, iniciando generación de ejercicios...');
-        _generateExercises();
+        print('✅ Usuario premium detectado, cargando ejercicios pendientes...');
+        _loadPendingExercises();
       } else {
         print('❌ Usuario no es premium');
         print('💡 Sugerencia: El usuario necesita hacer login nuevamente para actualizar la información de suscripción.');
@@ -189,6 +189,78 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
           message: 'No se pudo verificar el estado de suscripción: $e',
         );
       }
+    }
+  }
+
+  Future<void> _loadPendingExercises() async {
+    setState(() {
+      _isLoading = true;
+      _statusMessage = 'Cargando ejercicios pendientes...';
+    });
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+
+      if (token.isEmpty) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final response = await http.get(
+        Uri.parse('https://web.estoico.app/ia/generate/exercises?status=pending'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final exercises = data['exercises'] as List<dynamic>? ?? [];
+        final pendingCount = data['pending_count'] ?? 0;
+
+        setState(() {
+          _exercises = exercises.map((e) => {
+            'id': e['id'] ?? '',
+            'name': e['name'] ?? 'Sin nombre',
+            'level': e['level'] ?? 'principiante',
+            'objective': e['objective'] ?? '',
+            'instructions': e['instructions'] ?? '',
+            'duration': e['duration'] ?? '',
+            'reflection': e['reflection'] ?? '',
+            'source': e['source'] ?? '',
+            'status': e['status'] ?? 'pending',
+            'completed_at': e['completed_at'],
+            'created_at': e['created_at'],
+          }).toList();
+          _isLoading = false;
+          _statusMessage = pendingCount > 0 
+            ? '$pendingCount ejercicios pendientes' 
+            : 'No hay ejercicios pendientes';
+        });
+
+        // Si no hay ejercicios pendientes, generar nuevos
+        if (pendingCount == 0) {
+          print('📝 No hay ejercicios pendientes, generando nuevos...');
+          _generateExercises();
+        } else {
+          print('✅ Se cargaron $pendingCount ejercicios pendientes');
+        }
+      } else {
+        setState(() {
+          _isLoading = false;
+          _statusMessage = 'Error al cargar ejercicios';
+        });
+      }
+    } catch (e) {
+      print('❌ Error al cargar ejercicios pendientes: $e');
+      setState(() {
+        _isLoading = false;
+        _statusMessage = 'Error al cargar ejercicios';
+      });
     }
   }
 
@@ -277,6 +349,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                   print('💪 Ejercicio recibido: $data');
                   setState(() {
                     _exercises.add({
+                      'id': data['id'] ?? '',
                       'name': data['name'] ?? 'Sin nombre',
                       'level': data['level'] ?? 'principiante',
                       'objective': data['objective'] ?? '',
@@ -284,6 +357,9 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                       'duration': data['duration'] ?? '',
                       'reflection': data['reflection'] ?? '',
                       'source': data['source'] ?? '',
+                      'status': data['status'] ?? 'pending',
+                      'completed_at': data['completed_at'],
+                      'created_at': data['created_at'],
                       'index': data['index'] ?? _exercises.length + 1,
                       'total': data['total'] ?? _exercises.length,
                     });
@@ -358,6 +434,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                   print('💪 Ejercicio recibido (formato antiguo): $exercise');
                   setState(() {
                     _exercises.add({
+                      'id': exercise['id'] ?? '',
                       'name': exercise['name'] ?? 'Sin nombre',
                       'level': exercise['level'] ?? 'principiante',
                       'objective': exercise['objective'] ?? '',
@@ -365,6 +442,9 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                       'duration': exercise['duration'] ?? '',
                       'reflection': exercise['reflection'] ?? '',
                       'source': exercise['source'] ?? '',
+                      'status': exercise['status'] ?? 'pending',
+                      'completed_at': exercise['completed_at'],
+                      'created_at': exercise['created_at'],
                       'index': exercise['index'] ?? _exercises.length + 1,
                       'total': exercise['total'] ?? _exercises.length,
                     });
@@ -669,7 +749,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                     const Icon(Icons.bolt, color: Colors.orange, size: 24),
                     const SizedBox(width: 8),
                     Text(
-                      'Ejercicios Generados (${_exercises.length})',
+                      'Ejercicios Pendientes (${_exercises.length})',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -721,6 +801,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 16),
                             child: _buildExerciseCard(
+                              exerciseId: exercise['id'] ?? '',
                               index: exercise['index'] ?? index + 1,
                               name: exercise['name'] ?? 'Sin nombre',
                               level: exercise['level'] ?? 'principiante',
@@ -729,6 +810,19 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                               duration: exercise['duration'] ?? '',
                               reflection: exercise['reflection'] ?? '',
                               source: exercise['source'] ?? '',
+                              status: exercise['status'] ?? 'pending',
+                              onCompleted: () {
+                                // Eliminar el ejercicio de la lista cuando se complete
+                                setState(() {
+                                  _exercises.removeWhere((e) => e['id'] == exercise['id']);
+                                  
+                                  // Si era el último ejercicio, generar nuevos
+                                  if (_exercises.isEmpty) {
+                                    print('🎯 Último ejercicio completado, generando nuevos ejercicios...');
+                                    _generateExercises();
+                                  }
+                                });
+                              },
                             ),
                           );
                         },
@@ -745,6 +839,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
   }
 
   Widget _buildExerciseCard({
+    required String exerciseId,
     required int index,
     required String name,
     required String level,
@@ -753,6 +848,8 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     String? duration,
     String? reflection,
     String? source,
+    String? status,
+    VoidCallback? onCompleted,
   }) {
     // Colores para los iconos circulares según el índice
     final List<List<Color>> iconColors = [
@@ -864,24 +961,30 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 6),
-                    // Estado "Disponible"
+                    // Estado del ejercicio
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.2),
+                        color: (status == 'completed' 
+                            ? Colors.blue 
+                            : Colors.green).withOpacity(0.2),
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
-                          color: Colors.green.withOpacity(0.5),
+                          color: (status == 'completed' 
+                              ? Colors.blue 
+                              : Colors.green).withOpacity(0.5),
                           width: 1,
                         ),
                       ),
-                      child: const Text(
-                        'Disponible',
+                      child: Text(
+                        status == 'completed' ? 'Completado' : 'Disponible',
                         style: TextStyle(
-                          color: Colors.green,
+                          color: status == 'completed' 
+                              ? Colors.blue 
+                              : Colors.green,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -932,6 +1035,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                 onPressed: () {
                   ExerciseDetailScreen.show(
                     context: context,
+                    exerciseId: exerciseId,
                     name: name,
                     level: level,
                     objective: objective,
@@ -941,6 +1045,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                     source: source,
                     levelColor: colors[0],
                     levelIcon: Icons.workspace_premium,
+                    onCompleted: onCompleted,
                   );
                 },
                 style: ElevatedButton.styleFrom(
