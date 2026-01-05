@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../config/app_config.dart';
 
 /// Servicio para verificación de códigos (email, etc)
 class VerificationService {
-  static const String baseUrl = 'https://web.estoico.app/api';
+  static String get baseUrl => AppConfig.apiBaseUrl;
 
   // Verificar código de email
   static Future<Map<String, dynamic>> verifyEmailCode({

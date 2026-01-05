@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/app_config.dart';
 import '../widgets/custom_spinner.dart';
 import '../widgets/sweet_alert.dart';
 
@@ -402,7 +403,7 @@ class ExerciseDetailScreen extends StatelessWidget {
       try {
         final request = http.Request(
           'POST',
-          Uri.parse('https://web.estoico.app/ia/generate/exercises/$exerciseId/complete'),
+          Uri.parse('${AppConfig.webBaseUrl}/ia/generate/exercises/$exerciseId/complete'),
         );
         request.headers['Content-Type'] = 'application/json';
         request.headers['Authorization'] = 'Bearer $token';
@@ -629,7 +630,7 @@ class ExerciseDetailScreen extends StatelessWidget {
       };
       
       final response = await http.post(
-        Uri.parse('https://web.estoico.app/api/challenges/complete'),
+        Uri.parse('${AppConfig.apiBaseUrl}/challenges/complete'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../config/app_config.dart';
 import 'local_storage_service.dart';
 import '../offline_service.dart';
 import '../connectivity_service.dart';
@@ -7,7 +8,7 @@ import '../token_expiration_handler.dart';
 
 /// Servicio para gestión de quiz
 class QuizService {
-  static const String baseUrl = 'https://web.estoico.app/api';
+  static String get baseUrl => AppConfig.apiBaseUrl;
 
   // Enviar Quiz completo
   static Future<Map<String, dynamic>> submitQuiz({

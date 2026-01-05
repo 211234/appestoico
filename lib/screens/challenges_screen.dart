@@ -92,7 +92,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
           if (token != null && token.isNotEmpty) {
             // Hacer una petición directa para obtener la suscripción
             final response = await http.get(
-              Uri.parse('https://web.estoico.app/api/users/me'),
+              Uri.parse('${AppConfig.apiBaseUrl}/users/me'),
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer $token',
@@ -197,7 +197,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
               final progressToken = prefs.getString('token');
               if (progressToken != null && progressToken.isNotEmpty) {
                 final progressResponse = await http.get(
-                  Uri.parse('https://web.estoico.app/api/challenges/progress'),
+                  Uri.parse('${AppConfig.apiBaseUrl}/challenges/progress'),
                   headers: {
                     'Authorization': 'Bearer $progressToken',
                     'Content-Type': 'application/json',
@@ -278,7 +278,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
       }
 
       final response = await http.get(
-        Uri.parse('https://web.estoico.app/ia/generate/exercises?status=pending'),
+        Uri.parse('${AppConfig.webBaseUrl}/ia/generate/exercises?status=pending'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -361,7 +361,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
         return;
       }
 
-      final url = 'https://web.estoico.app/ia/generate/exercises/stream';
+      final url = '${AppConfig.webBaseUrl}/ia/generate/exercises/stream';
       print('🔍 Llamando a: $url');
       
       final request = http.Request(

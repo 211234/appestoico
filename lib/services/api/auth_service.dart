@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../config/app_config.dart';
 import 'local_storage_service.dart';
 
 /// Servicio para autenticación (login, registro, recuperación de contraseña)
 class AuthService {
-  static const String baseUrl = 'https://web.estoico.app/api';
+  static String get baseUrl => AppConfig.apiBaseUrl;
 
   // Registro de usuario
   static Future<Map<String, dynamic>> register({
