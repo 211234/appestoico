@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import '../config/app_config.dart';
 import '../services/api_service.dart';
 import '../services/notification_service.dart';
 import '../services/offline_service.dart';
@@ -160,7 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (token.isEmpty) return;
 
       final response = await http.get(
-        Uri.parse('https://web.estoico.app/api/challenges/progress'),
+        Uri.parse('${AppConfig.apiBaseUrl}/challenges/progress'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -316,7 +317,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       // ✅ Construir URL con el token JWT como parámetro
       final url = Uri.parse(
-          'https://web.estoico.app/subscription/premium?token=$jwtToken');
+          '${AppConfig.subscriptionUrl}?token=$jwtToken');
 
       // ✅ Abrir URL directamente
       if (await canLaunchUrl(url)) {

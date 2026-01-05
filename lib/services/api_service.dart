@@ -1,6 +1,7 @@
 // Este archivo actúa como puente para mantener compatibilidad con código existente
 // Los nuevos servicios están organizados en lib/services/api/
 
+import '../config/app_config.dart';
 import 'api/auth_service.dart';
 import 'api/verification_service.dart';
 import 'api/local_storage_service.dart';
@@ -12,8 +13,8 @@ import 'api/content_service.dart';
 /// Clase puente que redirige a los servicios especializados
 /// Para nuevo código, importa directamente los servicios de lib/services/api/
 class ApiService {
-  static const String baseUrl = 'https://web.estoico.app/api';
-  static const String emblemasUrl = 'https://api.estoico.app/api';
+  static String get baseUrl => AppConfig.apiBaseUrl;
+  static String get emblemasUrl => AppConfig.emblemasUrl;
 
   // ========== AUTENTICACIÓN ==========
 

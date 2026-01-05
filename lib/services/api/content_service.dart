@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../config/app_config.dart';
 import 'local_storage_service.dart';
 import '../offline_service.dart';
 import '../connectivity_service.dart';
@@ -7,8 +8,8 @@ import '../token_expiration_handler.dart';
 
 /// Servicio para contenido general (frases del día, emblemas, etc)
 class ContentService {
-  static const String baseUrl = 'https://web.estoico.app/api';
-  static const String emblemasUrl = 'https://api.estoico.app/api';
+  static String get baseUrl => AppConfig.apiBaseUrl;
+  static String get emblemasUrl => AppConfig.emblemasUrl;
 
   // Obtener frase del día
   static Future<Map<String, dynamic>> getDailyQuote() async {

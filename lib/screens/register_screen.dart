@@ -166,10 +166,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _signUpWithGoogle() {
-    // Abrir WebView con la autenticación de Google
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (context) => const GoogleAuthScreen()));
+    // Abrir GoogleAuthScreen con Chrome Custom Tabs (flujo anterior)
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const GoogleAuthScreen(),
+      ),
+    );
   }
 
   void _goToLogin() {

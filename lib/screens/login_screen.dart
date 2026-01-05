@@ -100,12 +100,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _loginWithGoogle() {
-    // Abrir WebView con la autenticación de Google
+    // Abrir GoogleAuthScreen con Chrome Custom Tabs (flujo anterior)
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const GoogleAuthScreen(
-          authUrl: 'https://web.estoico.app/api/auth/google/redirect',
-        ),
+        builder: (context) => const GoogleAuthScreen(),
       ),
     );
   }
@@ -298,42 +296,46 @@ class _LoginScreenState extends State<LoginScreen> {
               // Botón Iniciar sesión con Google
               SizedBox(
                 width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: _loginWithGoogle,
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14.0),
-                    side: const BorderSide(color: Colors.grey, width: 1.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        'assets/images/google.png',
-                        height: 24,
-                        width: 24,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
-                            Icons.account_circle,
-                            color: Colors.white,
-                            size: 24,
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Continuar con Google',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(color: Colors.orange),
+                      )
+                    : OutlinedButton(
+                        onPressed: _loginWithGoogle,
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14.0),
+                          side: const BorderSide(color: Colors.grey, width: 1.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              'assets/images/google.png',
+                              height: 24,
+                              width: 24,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(
+                                  Icons.account_circle,
+                                  color: Colors.white,
+                                  size: 24,
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Continuar con Google',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
               ),
 
               const SizedBox(height: 40),

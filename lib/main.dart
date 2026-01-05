@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'services/notification_service.dart';
 import 'services/connectivity_service.dart';
 import 'services/token_expiration_handler.dart';
+import 'config/app_config.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
@@ -14,6 +15,9 @@ import 'dart:async';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Cargar variables de entorno
+  await AppConfig.load();
 
   // Inicializar servicio de notificaciones
   await NotificationService.initialize();

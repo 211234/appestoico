@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../config/app_config.dart';
 import 'local_storage_service.dart';
 import '../offline_service.dart';
 import '../connectivity_service.dart';
@@ -8,7 +9,7 @@ import '../../models/reflection.dart';
 
 /// Servicio para gestión del diario (reflexiones)
 class DiaryService {
-  static const String baseUrl = 'https://web.estoico.app/api';
+  static String get baseUrl => AppConfig.apiBaseUrl;
 
   // Obtener todas las reflexiones del usuario
   static Future<Map<String, dynamic>> getAllReflections() async {
