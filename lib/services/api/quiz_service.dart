@@ -10,6 +10,41 @@ import '../token_expiration_handler.dart';
 class QuizService {
   static String get baseUrl => AppConfig.apiBaseUrl;
 
+  // Mapear valores de daily challenges del frontend al backend
+  // Backend acepta: 'meditacion_matutina', 'meditación', 'meditacion', 'reflexion_nocturna', 
+  // 'reflexión', 'reflexion', 'diario_estoico', 'diario', 'visualizacion_negativa', 
+  // 'estres', 'ansiedad', 'ira', 'frustracion', 'tristeza', 'miedo', 'procrastinacion', 
+  // 'falta_de_enfoque', 'relaciones', 'presion_laboral', 'ejercicio_fisico' o 'gratitud'
+  static String _mapDailyChallengeToBackend(String frontendValue) {
+    final Map<String, String> mapping = {
+      'meditacion_matutina': 'meditacion_matutina', // ✅ Válido
+      'reflexion_nocturna': 'reflexion_nocturna', // ✅ Válido
+      'ejercicio_fisico': 'ejercicio_fisico', // ✅ Válido
+      'lectura_estoica': 'diario_estoico', // Mapear a diario_estoico
+      'acto_de_bondad': 'gratitud', // Mapear a gratitud
+      'tiempo_en_silencio': 'meditacion', // Mapear a meditacion
+      'practica_de_gratitud': 'gratitud', // ✅ Válido
+      'control_emocional': 'ansiedad', // Mapear control emocional a ansiedad (manejo de emociones)
+    };
+    return mapping[frontendValue] ?? frontendValue;
+  }
+
+  // Mapear valores de stoic paths del frontend al backend
+  // Backend acepta: 'Paz Interior', 'paz interior', 'paz_interior', 'Autocontrol', 'autocontrol',
+  // 'Sabiduría', 'sabiduría', 'sabiduria', 'Resiliencia', 'resiliencia', 'Gratitud', 'gratitud',
+  // 'Justicia', 'justicia', 'Coraje', 'coraje', 'Templanza', 'templanza' o 'virtud'
+  static String _mapStoicPathToBackend(String frontendValue) {
+    final Map<String, String> mapping = {
+      'paz_interior': 'paz_interior', // ✅ Válido
+      'autocontrol': 'autocontrol', // ✅ Válido
+      'sabiduria': 'sabiduria', // ✅ Válido
+      'resiliencia': 'resiliencia', // ✅ Válido
+      'proposito': 'virtud', // Mapear propósito a virtud
+      'equilibrio': 'templanza', // Mapear equilibrio a templanza
+    };
+    return mapping[frontendValue] ?? frontendValue;
+  }
+
   // Enviar Quiz completo
   static Future<Map<String, dynamic>> submitQuiz({
     required String ageRange,
@@ -33,6 +68,27 @@ class QuizService {
         };
       }
 
+      // Mapear valores antes de enviar
+      final mappedDailyChallenges = dailyChallenges.map((challenge) {
+        return _mapDailyChallengeToBackend(challenge);
+      }).toList();
+      
+      final mappedStoicPaths = stoicPaths.map((path) {
+        return _mapStoicPathToBackend(path);
+      }).toList();
+
+      final requestBody = {
+        'age_range': ageRange,
+        'gender': gender,
+        'country': country,
+        'religious_belief': religiousBelief,
+        'spiritual_practice_level': spiritualPracticeLevel,
+        'spiritual_practice_frequency': spiritualPracticeFrequency,
+        'daily_challenges': mappedDailyChallenges,
+        'stoic_paths': mappedStoicPaths,
+        'stoic_level': stoicLevel,
+      };
+
       final response = await http
           .post(
             Uri.parse('$baseUrl/quiz/submit'),
@@ -40,17 +96,7 @@ class QuizService {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
             },
-            body: jsonEncode({
-              'age_range': ageRange,
-              'gender': gender,
-              'country': country,
-              'religious_belief': religiousBelief,
-              'spiritual_practice_level': spiritualPracticeLevel,
-              'spiritual_practice_frequency': spiritualPracticeFrequency,
-              'daily_challenges': dailyChallenges,
-              'stoic_paths': stoicPaths,
-              'stoic_level': stoicLevel,
-            }),
+            body: jsonEncode(requestBody),
           )
           .timeout(const Duration(seconds: 10));
 
@@ -81,9 +127,15 @@ class QuizService {
           'tokenExpired': true,
         };
       } else {
+        // Si hay error de validación, mostrar mensaje más claro
+        String errorMessage = data['message'] ?? 'Error al enviar el quiz';
+        if (errorMessage.contains('validation errors') || errorMessage.contains('Input should be')) {
+          errorMessage = 'Error de validación: Los valores enviados no coinciden con los esperados por el servidor. Por favor, completa el quiz nuevamente.';
+        }
         return {
           'success': false,
-          'message': data['message'] ?? 'Error al enviar el quiz',
+          'message': errorMessage,
+          'responseBody': data,
         };
       }
     } catch (e) {

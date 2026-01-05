@@ -72,7 +72,7 @@ class _Quiz4ScreenState extends State<Quiz4Screen> {
     }
   }
 
-  void _finishSetup() async {
+  Future<void> _finishSetup() async {
     if (selectedGoals.length < 2) {
       SweetAlert.showError(
         context: context,
@@ -83,12 +83,14 @@ class _Quiz4ScreenState extends State<Quiz4Screen> {
     }
 
     // Guardar los objetivos seleccionados en QuizService
-    QuizService.updateQuiz4(stoicPaths: selectedGoals);
+    await QuizService.updateQuiz4(stoicPaths: selectedGoals);
 
     // Navegar a Quiz5
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (context) => const Quiz5Screen()));
+    if (mounted) {
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (context) => const Quiz5Screen()));
+    }
   }
 
   void _goBackToHome() {
