@@ -1,0 +1,15 @@
+# Configuración del Keystore para Firma del APK
+# Copia este archivo a key.properties y completa con tus valores
+
+# Contraseña del keystore (la que usaste al crear el keystore)
+storePassword=TU_CONTRASEÑA_DEL_KEYSTORE
+
+# Contraseña de la clave (puede ser la misma que storePassword)
+keyPassword=TU_CONTRASEÑA_DE_LA_CLAVE
+
+# Alias de la clave (el que usaste al crear el keystore, normalmente "upload")
+keyAlias=upload
+
+# Ruta relativa al keystore desde android/
+storeFile=app/upload-keystore.jks
+

@@ -6,6 +6,7 @@ import '../widgets/custom_spinner.dart';
 import '../services/api_service.dart';
 import '../widgets/sweet_alert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/app_config.dart';
 import 'exercise_detail_screen.dart';
 
 class ChallengesScreen extends StatefulWidget {

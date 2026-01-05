@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -33,11 +35,57 @@ android {
         versionName = flutter.versionName
     }
 
+    // Configuración de firma
+    val keystorePropertiesFile = rootProject.file("key.properties")
+    var storePasswordValue = ""
+    var keyPasswordValue = ""
+    var keyAliasValue = "upload"
+    var storeFileValue = "upload-keystore.jks"
+    
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.readLines().forEach { line ->
+            // Limpiar la línea: eliminar BOM, espacios y caracteres invisibles
+            val cleanedLine = line.trim().replace("\uFEFF", "").replace("\u200B", "")
+            // Ignorar líneas vacías y comentarios
+            if (cleanedLine.isEmpty() || cleanedLine.startsWith("#")) {
+                return@forEach
+            }
+            when {
+                cleanedLine.contains("storePassword=") -> {
+                    storePasswordValue = cleanedLine.substringAfter("storePassword=").trim()
+                }
+                cleanedLine.contains("keyPassword=") -> {
+                    keyPasswordValue = cleanedLine.substringAfter("keyPassword=").trim()
+                }
+                cleanedLine.contains("keyAlias=") -> {
+                    keyAliasValue = cleanedLine.substringAfter("keyAlias=").trim()
+                }
+                cleanedLine.contains("storeFile=") -> {
+                    storeFileValue = cleanedLine.substringAfter("storeFile=").trim()
+                }
+            }
+        }
+    }
+
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias = keyAliasValue
+                keyPassword = keyPasswordValue
+                storeFile = file(storeFileValue)
+                storePassword = storePasswordValue
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Usar configuración de firma si existe, sino usar debug (para desarrollo)
+            signingConfig = if (keystorePropertiesFile.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }

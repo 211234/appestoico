@@ -57,33 +57,51 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _checkAuthAndNavigate() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
+    try {
+      if (!mounted) return;
+      
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
 
-    // Si hay token, ir directo a HomePage
-    if (token != null && token.isNotEmpty) {
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const HomePage(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 500),
-        ),
-      );
-    } else {
-      // Si no hay token, ir a LoginScreen
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const LoginScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 500),
-        ),
-      );
+      if (!mounted) return;
+
+      // Si hay token, ir directo a HomePage
+      if (token != null && token.isNotEmpty) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const HomePage(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 500),
+          ),
+        );
+      } else {
+        // Si no hay token, ir a LoginScreen
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const LoginScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 500),
+          ),
+        );
+      }
+    } catch (e) {
+      print('⚠️ Error en _checkAuthAndNavigate: $e');
+      // Si hay error, intentar navegar a login de todas formas
+      if (mounted) {
+        try {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+          );
+        } catch (navError) {
+          print('⚠️ Error crítico en navegación: $navError');
+        }
+      }
     }
   }
 
