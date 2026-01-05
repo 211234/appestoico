@@ -47,4 +47,8 @@ app.*.map.json
 # Environment variables
 .env
 
-CONFIGURACION_ENV_Y_PRODUCCION.md
+# Keystore files
+*.jks
+*.keystore
+key.properties
+upload-keystore.jks

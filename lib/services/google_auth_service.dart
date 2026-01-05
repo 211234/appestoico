@@ -1,9 +1,9 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/app_config.dart';
 import 'api_service.dart';
 
 class GoogleAuthService {
@@ -12,33 +12,14 @@ class GoogleAuthService {
     scopes: ['email', 'profile'],
   );
 
-  // URL de tu API
-  // Para pruebas locales: 'http://localhost:8000/api'
-  // Para producción: 'https://web.estoico.app/api'
-  static const String apiBaseUrl = 'https://web.estoico.app/api';
+  // URL de tu API (usando AppConfig para obtener desde .env)
+  static String get apiBaseUrl => AppConfig.apiBaseUrl;
 
   /// Inicia sesión con Google
   /// Retorna un Map con 'success', 'token', 'user' y 'message'
   Future<Map<String, dynamic>?> signInWithGoogle() async {
-    // #region agent log
-    try {
-      final logFile = File('c:\\Users\\pedro\\OneDrive\\Escritorio\\frondHombreEstoico\\appestoico\\.cursor\\debug.log');
-      await logFile.parent.create(recursive: true);
-      await logFile.writeAsString('${jsonEncode({"sessionId":"debug-session","runId":"run1","hypothesisId":"A","location":"google_auth_service.dart:21","message":"signInWithGoogle iniciado","data":{"scopes":_googleSignIn.scopes},"timestamp":DateTime.now().millisecondsSinceEpoch})}\n', mode: FileMode.append);
-    } catch (e) {
-      print('Error escribiendo log inicial: $e');
-    }
-    // #endregion
     try {
       // Paso 1: Iniciar sesión con Google (muestra selector de cuentas)
-      // #region agent log
-      try {
-        final logFile = File('c:\\Users\\pedro\\OneDrive\\Escritorio\\frondHombreEstoico\\appestoico\\.cursor\\debug.log');
-        await logFile.writeAsString('${jsonEncode({"sessionId":"debug-session","runId":"run1","hypothesisId":"A","location":"google_auth_service.dart:30","message":"Antes de _googleSignIn.signIn()","data":{},"timestamp":DateTime.now().millisecondsSinceEpoch})}\n', mode: FileMode.append);
-      } catch (e) {
-        print('Error escribiendo log antes de signIn: $e');
-      }
-      // #endregion
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       
       if (googleUser == null) {
@@ -62,7 +43,7 @@ class GoogleAuthService {
 
       // Paso 3: Enviar el token a tu backend
       final response = await http.post(
-        Uri.parse('$apiBaseUrl/auth/google/token'),
+        Uri.parse('${apiBaseUrl}/auth/google/token'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -147,79 +128,20 @@ class GoogleAuthService {
           };
         }
       }
-    } catch (e, stackTrace) {
-      // #region agent log
-      try {
-        final logFile = File('c:\\Users\\pedro\\OneDrive\\Escritorio\\frondHombreEstoico\\appestoico\\.cursor\\debug.log');
-        await logFile.parent.create(recursive: true);
-        final errorData = {
-          "sessionId": "debug-session",
-          "runId": "run1",
-          "hypothesisId": "A",
-          "location": "google_auth_service.dart:144",
-          "message": "Error capturado en signInWithGoogle",
-          "data": {
-            "errorType": e.runtimeType.toString(),
-            "errorString": e.toString(),
-            "errorCode": e is PlatformException ? e.code : null,
-            "errorMessage": e is PlatformException ? e.message : null,
-            "errorDetails": e is PlatformException ? e.details?.toString() : null,
-            "stackTrace": stackTrace.toString().substring(0, stackTrace.toString().length > 2000 ? 2000 : stackTrace.toString().length)
-          },
-          "timestamp": DateTime.now().millisecondsSinceEpoch
-        };
-        await logFile.writeAsString('${jsonEncode(errorData)}\n', mode: FileMode.append);
-        print('📝 Log escrito: Error capturado');
-      } catch (logError) {
-        print('❌ Error escribiendo log: $logError');
-        print('❌ Error original: $e');
-      }
-      // #endregion
-      
+    } catch (e) {
       // Error de red o excepción
       String errorMessage = 'Error al iniciar sesión con Google';
       
       // Manejar errores específicos de Google Sign-In
       if (e.toString().contains('ApiException: 10') || (e is PlatformException && e.code == 'sign_in_failed')) {
-        // #region agent log
-        try {
-          final logFile = File('c:\\Users\\pedro\\OneDrive\\Escritorio\\frondHombreEstoico\\appestoico\\.cursor\\debug.log');
-          await logFile.writeAsString('${jsonEncode({"sessionId":"debug-session","runId":"run1","hypothesisId":"B","location":"google_auth_service.dart:156","message":"ApiException: 10 detectado - Error de configuración","data":{"error":e.toString(),"errorType":e.runtimeType.toString(),"packageName":"com.example.estoico","isPlatformException":e is PlatformException},"timestamp":DateTime.now().millisecondsSinceEpoch})}\n', mode: FileMode.append);
-        } catch (_) {}
-        // #endregion
-        errorMessage = 'Error de configuración: Necesitas crear un OAuth Client ID de tipo ANDROID (no Web) en Google Cloud Console. Package name: com.example.estoico. Ver CONFIGURACION_GOOGLE_OAUTH_ANDROID.md';
+        errorMessage = 'Error de configuración: Verifica la configuración de Google Sign-In en Google Cloud Console';
       } else if (e.toString().contains('sign_in_failed')) {
-        // #region agent log
-        try {
-          final logFile = File('c:\\Users\\pedro\\OneDrive\\Escritorio\\frondHombreEstoico\\appestoico\\.cursor\\debug.log');
-          await logFile.writeAsString('${jsonEncode({"sessionId":"debug-session","runId":"run1","hypothesisId":"C","location":"google_auth_service.dart:191","message":"sign_in_failed detectado","data":{"error":e.toString()},"timestamp":DateTime.now().millisecondsSinceEpoch})}\n', mode: FileMode.append);
-        } catch (_) {}
-        // #endregion
         errorMessage = 'Error de autenticación: Verifica la configuración de Google Sign-In en Google Cloud Console';
       } else if (e.toString().contains('NetworkError')) {
-        // #region agent log
-        try {
-          final logFile = File('c:\\Users\\pedro\\OneDrive\\Escritorio\\frondHombreEstoico\\appestoico\\.cursor\\debug.log');
-          await logFile.writeAsString('${jsonEncode({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"google_auth_service.dart:199","message":"NetworkError detectado","data":{"error":e.toString()},"timestamp":DateTime.now().millisecondsSinceEpoch})}\n', mode: FileMode.append);
-        } catch (_) {}
-        // #endregion
         errorMessage = 'Error de conexión: Verifica tu conexión a internet';
       } else {
-        // #region agent log
-        try {
-          final logFile = File('c:\\Users\\pedro\\OneDrive\\Escritorio\\frondHombreEstoico\\appestoico\\.cursor\\debug.log');
-          await logFile.writeAsString('${jsonEncode({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"google_auth_service.dart:207","message":"Error desconocido","data":{"error":e.toString(),"errorType":e.runtimeType.toString()},"timestamp":DateTime.now().millisecondsSinceEpoch})}\n', mode: FileMode.append);
-        } catch (_) {}
-        // #endregion
         errorMessage = 'Error: ${e.toString()}';
       }
-      
-      // #region agent log
-      try {
-        final logFile = File('c:\\Users\\pedro\\OneDrive\\Escritorio\\frondHombreEstoico\\appestoico\\.cursor\\debug.log');
-        await logFile.writeAsString('${jsonEncode({"sessionId":"debug-session","runId":"run1","hypothesisId":"A","location":"google_auth_service.dart:219","message":"Retornando error al usuario","data":{"errorMessage":errorMessage},"timestamp":DateTime.now().millisecondsSinceEpoch})}\n', mode: FileMode.append);
-      } catch (_) {}
-      // #endregion
       
       return {
         'success': false,

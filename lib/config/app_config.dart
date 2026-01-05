@@ -28,9 +28,17 @@ class AppConfig {
   static Future<void> load() async {
     try {
       await dotenv.load(fileName: '.env');
+      print('✅ Archivo .env cargado correctamente');
     } catch (e) {
       // Si no existe .env, usar valores por defecto
       print('⚠️ No se pudo cargar .env, usando valores por defecto: $e');
+      // Asegurar que dotenv esté inicializado aunque falle la carga
+      try {
+        // Intentar cargar sin especificar archivo para inicializar
+        await dotenv.load();
+      } catch (_) {
+        // Si también falla, continuar sin .env
+      }
     }
   }
   
