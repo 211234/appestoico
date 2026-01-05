@@ -63,12 +63,12 @@ class _Quiz1ScreenState extends State<Quiz1Screen> {
     return display.toLowerCase();
   }
 
-  void _continueToNext() {
+  Future<void> _continueToNext() async {
     if (selectedAge != null &&
         selectedGender != null &&
         selectedCountry != null) {
       // Guardar datos en el servicio con valores para el API
-      QuizService.updateQuiz1(
+      await QuizService.updateQuiz1(
         ageRange: selectedAge!,
         gender: _getGenderValue(selectedGender!),
         country: selectedCountryCode ??
@@ -77,9 +77,11 @@ class _Quiz1ScreenState extends State<Quiz1Screen> {
       );
 
       // ✅ Navegar a HomePage (Quiz 1 completado)
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const HomePage()),
-      );
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
+      }
     }
   }
 

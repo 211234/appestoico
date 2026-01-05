@@ -91,8 +91,8 @@ class _Quiz5ScreenState extends State<Quiz5Screen> {
       _isSubmitting = true;
     });
 
-    // Guardar el nivel seleccionado en QuizService
-    QuizService.updateQuiz5(stoicLevel: selectedLevel!);
+    // Guardar el nivel seleccionado en QuizService (esto ya carga los datos existentes)
+    await QuizService.updateQuiz5(stoicLevel: selectedLevel!);
 
     // Obtener todos los datos del quiz
     final quiz = QuizService.currentQuiz;
@@ -102,6 +102,7 @@ class _Quiz5ScreenState extends State<Quiz5Screen> {
       setState(() {
         _isSubmitting = false;
       });
+      
       SweetAlert.showError(
         context: context,
         title: 'Quiz incompleto',
@@ -111,17 +112,6 @@ class _Quiz5ScreenState extends State<Quiz5Screen> {
     }
 
     // Enviar el quiz al servidor
-    print('📤 Enviando quiz con datos:');
-    print('  ageRange: ${quiz.ageRange}');
-    print('  gender: ${quiz.gender}');
-    print('  country: ${quiz.country}');
-    print('  religiousBelief: ${quiz.religiousBelief}');
-    print('  spiritualPracticeLevel: ${quiz.spiritualPracticeLevel}');
-    print('  spiritualPracticeFrequency: ${quiz.spiritualPracticeFrequency}');
-    print('  dailyChallenges: ${quiz.dailyChallenges}');
-    print('  stoicPaths: ${quiz.stoicPaths}');
-    print('  stoicLevel: ${quiz.stoicLevel}');
-
     final result = await ApiService.submitQuiz(
       ageRange: quiz.ageRange!,
       gender: quiz.gender!,
@@ -133,9 +123,6 @@ class _Quiz5ScreenState extends State<Quiz5Screen> {
       stoicPaths: quiz.stoicPaths,
       stoicLevel: quiz.stoicLevel,
     );
-
-    print('📥 Respuesta del servidor: ${result['success']}');
-    print('  Mensaje: ${result['message']}');
 
     setState(() {
       _isSubmitting = false;

@@ -112,7 +112,7 @@ class _Quiz3ScreenState extends State<Quiz3Screen> {
     }
 
     // Guardar datos en el servicio
-    QuizService.updateQuiz3(dailyChallenges: selectedChallenges);
+    await QuizService.updateQuiz3(dailyChallenges: selectedChallenges);
 
     // Programar notificaciones para los desafíos con horario
     for (final challengeKey in selectedChallenges) {

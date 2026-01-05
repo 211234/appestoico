@@ -139,20 +139,22 @@ class _Quiz2ScreenState extends State<Quiz2Screen> {
     return map[value] ?? value ?? '';
   }
 
-  void _continueToNext() {
+  Future<void> _continueToNext() async {
     if (selectedReligion != null &&
         selectedSpiritualPractice != null &&
         selectedFrequency != null) {
       // Guardar datos en el servicio
-      QuizService.updateQuiz2(
+      await QuizService.updateQuiz2(
         religiousBelief: _getReligionValue(selectedReligion!),
         spiritualPracticeLevel: _getPracticeValue(selectedSpiritualPractice!),
         spiritualPracticeFrequency: _getFrequencyValue(selectedFrequency!),
       );
 
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (context) => const Quiz3Screen()));
+      if (mounted) {
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => const Quiz3Screen()));
+      }
     }
   }
 

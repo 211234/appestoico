@@ -8,45 +8,55 @@ class QuizService {
   static QuizData get currentQuiz => _currentQuiz;
 
   // Actualizar datos del Quiz1 (Datos Personales)
-  static void updateQuiz1({
+  static Future<void> updateQuiz1({
     required String ageRange,
     required String gender,
     required String country,
-  }) {
+  }) async {
+    // Cargar datos existentes primero para no perder información
+    await loadFromPreferences();
     _currentQuiz.ageRange = ageRange;
     _currentQuiz.gender = gender;
     _currentQuiz.country = country;
-    _saveToPreferences();
+    await _saveToPreferences();
   }
 
   // Actualizar datos del Quiz2 (Espiritualidad)
-  static void updateQuiz2({
+  static Future<void> updateQuiz2({
     required String religiousBelief,
     required String spiritualPracticeLevel,
     required String spiritualPracticeFrequency,
-  }) {
+  }) async {
+    // Cargar datos existentes primero para no perder información
+    await loadFromPreferences();
     _currentQuiz.religiousBelief = religiousBelief;
     _currentQuiz.spiritualPracticeLevel = spiritualPracticeLevel;
     _currentQuiz.spiritualPracticeFrequency = spiritualPracticeFrequency;
-    _saveToPreferences();
+    await _saveToPreferences();
   }
 
   // Actualizar datos del Quiz3 (Desafíos Diarios)
-  static void updateQuiz3({required List<String> dailyChallenges}) {
+  static Future<void> updateQuiz3({required List<String> dailyChallenges}) async {
+    // Cargar datos existentes primero para no perder información
+    await loadFromPreferences();
     _currentQuiz.dailyChallenges = dailyChallenges;
-    _saveToPreferences();
+    await _saveToPreferences();
   }
 
   // Actualizar datos del Quiz4 (Camino Estoico)
-  static void updateQuiz4({required List<String> stoicPaths}) {
+  static Future<void> updateQuiz4({required List<String> stoicPaths}) async {
+    // Cargar datos existentes primero para no perder información
+    await loadFromPreferences();
     _currentQuiz.stoicPaths = stoicPaths;
-    _saveToPreferences();
+    await _saveToPreferences();
   }
 
   // Actualizar datos del Quiz5 (Nivel de Conocimiento)
-  static void updateQuiz5({required String stoicLevel}) {
+  static Future<void> updateQuiz5({required String stoicLevel}) async {
+    // Cargar datos existentes primero para no perder información
+    await loadFromPreferences();
     _currentQuiz.stoicLevel = stoicLevel;
-    _saveToPreferences();
+    await _saveToPreferences();
   }
 
   // Limpiar quiz
