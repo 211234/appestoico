@@ -342,13 +342,13 @@ class _GoogleAuthScreenState extends State<GoogleAuthScreen> {
           await logFile.writeAsString('${jsonEncode({"sessionId":"debug-session","runId":"run1","hypothesisId":"B","location":"google_auth_screen.dart:188","message":"Antes de saveUserData","data":{"userId":userId,"email":email},"timestamp":DateTime.now().millisecondsSinceEpoch})}\n', mode: FileMode.append);
         } catch (_) {}
         // #endregion
-        await ApiService.saveUserData(
-          token: token,
-          userId: userId,
-          nombre: nombre,
-          apellidos: apellidos,
-          email: email,
-        );
+      await ApiService.saveUserData(
+        token: token,
+        userId: userId,
+        nombre: nombre,
+        apellidos: apellidos,
+        email: email,
+      );
         // #region agent log
         try {
           final logFile = await File('.cursor/debug.log').create(recursive: true);
@@ -431,21 +431,21 @@ class _GoogleAuthScreenState extends State<GoogleAuthScreen> {
 
         print('✅ Datos del usuario guardados correctamente');
 
-        // Navegar al Quiz1 si es nuevo usuario, sino al Home
-        if (mounted) {
-          if (isNewUser) {
+      // Navegar al Quiz1 si es nuevo usuario, sino al Home
+      if (mounted) {
+        if (isNewUser) {
             print('📝 Usuario nuevo, navegando a Quiz1');
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (context) => const Quiz1Screen()),
-              (route) => false,
-            );
-          } else {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const Quiz1Screen()),
+            (route) => false,
+          );
+        } else {
             print('🏠 Usuario existente, navegando a HomePage');
-            Navigator.of(context).pushAndRemoveUntil(
+          Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (context) => const HomePage()),
-              (route) => false,
-            );
-          }
+            (route) => false,
+          );
+        }
         }
       } catch (e) {
         // #region agent log

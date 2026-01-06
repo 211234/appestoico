@@ -151,9 +151,9 @@ class _Quiz2ScreenState extends State<Quiz2Screen> {
       );
 
       if (mounted) {
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (context) => const Quiz3Screen()));
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (context) => const Quiz3Screen()));
       }
     }
   }

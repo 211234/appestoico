@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../models/daily_quote.dart';
 import '../models/reflection.dart';
+import '../config/app_config.dart';
 import 'emblema_intro_screen.dart';
 import 'diary_screen.dart';
 import 'package:intl/intl.dart';
@@ -20,6 +24,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingQuote = true;
   Reflection? _lastReflection;
   bool _isLoadingReflection = true;
+  Map<String, dynamic>? _challengeProgress;
+  bool _isPremium = false;
 
   @override
   void initState() {
@@ -27,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadUserName();
     _loadDailyQuote();
     _loadLastReflection();
+    _checkAndLoadProgress();
   }
 
   Future<void> _loadUserName() async {
@@ -814,42 +821,50 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                   // Grid de opciones principales
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildOptionCard(
-                          icon: Icons.auto_stories,
-                          iconColor: Colors.orange,
-                          title: 'Conoce tus raíces',
-                          subtitle: 'Conocimiento profundo',
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const EmblemaIntroScreen(),
-                              ),
-                            );
-                          },
+                  IntrinsicHeight(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildOptionCard(
+                            icon: Icons.auto_stories,
+                            iconColor: Colors.orange,
+                            title: 'Conoce tus raíces',
+                            subtitle: 'Conocimiento profundo',
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const EmblemaIntroScreen(),
+                                ),
+                              );
+                            },
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildOptionCard(
-                          icon: Icons.calendar_today,
-                          iconColor: Colors.blue,
-                          title: 'Diario',
-                          subtitle: 'Reflexión diaria',
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => const DiaryScreen(),
-                              ),
-                            );
-                          },
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildOptionCard(
+                            icon: Icons.calendar_today,
+                            iconColor: Colors.blue,
+                            title: 'Diario',
+                            subtitle: 'Reflexión diaria',
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const DiaryScreen(),
+                                ),
+                              );
+                            },
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+
+                  // Progreso de Desafíos (solo si es premium)
+                  if (_challengeProgress != null) ...[
+                    const SizedBox(height: 20),
+                    _buildChallengeProgressCard(),
+                  ],
 
                   const SizedBox(
                     height: 100,
@@ -976,5 +991,285 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       return 'Hoy';
     }
+  }
+
+  Future<void> _checkAndLoadProgress() async {
+    try {
+      // Verificar si el usuario es premium
+      final prefs = await SharedPreferences.getInstance();
+      final subscriptionStr = prefs.getString('subscription');
+
+      bool isPremium = false;
+
+      if (subscriptionStr != null) {
+        try {
+          final subscription = json.decode(subscriptionStr);
+
+          final hasActive = subscription['hasActiveSubscription'] == true;
+
+          // Verificar la fecha de fin del período
+          DateTime? currentPeriodEnd;
+          if (subscription['currentPeriodEnd'] != null) {
+            try {
+              final dateStr = subscription['currentPeriodEnd'].toString();
+              currentPeriodEnd = DateTime.parse(dateStr.replaceAll(' ', 'T'));
+            } catch (e) {
+              print('⚠️ Error al parsear currentPeriodEnd: $e');
+            }
+          }
+
+          // Si hay fecha de fin del período, verificar que aún no haya expirado
+          if (currentPeriodEnd != null) {
+            final now = DateTime.now();
+            final isNotExpired = currentPeriodEnd.isAfter(now);
+
+            // Si la suscripción tiene período activo (fecha futura) y hasActiveSubscription es true,
+            // está activa incluso si el status es 'cancelled' o 'canceled'
+            isPremium = isNotExpired && hasActive;
+          } else {
+            // Si no hay currentPeriodEnd, usar la lógica original
+            final status = subscription['status']?.toString().toLowerCase();
+            isPremium = hasActive && status == 'active';
+          }
+        } catch (e) {
+          print('Error al parsear suscripción: $e');
+        }
+      }
+
+      // Guardar el estado premium
+      setState(() {
+        _isPremium = isPremium;
+      });
+
+      // Si es premium, cargar el progreso
+      if (isPremium) {
+        await _loadChallengeProgress();
+      }
+    } catch (e) {
+      print('Error al verificar premium y cargar progreso: $e');
+    }
+  }
+
+  Future<void> _loadChallengeProgress() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+
+      if (token.isEmpty) return;
+
+      final response = await http.get(
+        Uri.parse('${AppConfig.apiBaseUrl}/challenges/progress'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        if (responseData['success'] == true && responseData['data'] != null) {
+          setState(() {
+            _challengeProgress = responseData['data'];
+          });
+        }
+      }
+    } catch (e) {
+      print('❌ Excepción al cargar progreso de desafíos: $e');
+    }
+  }
+
+  Widget _buildChallengeProgressCard() {
+    if (_challengeProgress == null) return const SizedBox.shrink();
+
+    final currentLevel =
+        _challengeProgress!['current_level_label'] ?? 'Principiante';
+    final currentPoints = _challengeProgress!['current_points'] ?? 0;
+    final nextLevel = _challengeProgress!['next_level'];
+
+    int pointsNeeded = 0;
+    String nextLevelLabel = 'Nivel máximo alcanzado';
+
+    if (nextLevel != null) {
+      pointsNeeded = nextLevel['points_needed'] ?? 0;
+      nextLevelLabel = nextLevel['next_level_label'] ?? 'Siguiente nivel';
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.orange.withOpacity(0.2),
+            Colors.deepOrange.withOpacity(0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.emoji_events,
+                  color: Colors.orange,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Progreso de Desafíos',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Nivel: $currentLevel',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          // Puntos actuales
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Puntos actuales',
+                    style: TextStyle(
+                      color: Colors.white60,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$currentPoints',
+                    style: const TextStyle(
+                      color: Colors.orange,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              if (nextLevel != null)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text(
+                      'Puntos faltantes',
+                      style: TextStyle(
+                        color: Colors.white60,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$pointsNeeded',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+          if (nextLevel != null) ...[
+            const SizedBox(height: 16),
+            // Barra de progreso
+            Container(
+              height: 8,
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: (currentPoints / (currentPoints + pointsNeeded))
+                    .clamp(0.0, 1.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.orange, Colors.deepOrange],
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Siguiente nivel
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: (Colors.grey[900] ?? Colors.grey).withOpacity(0.5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.arrow_upward,
+                    color: Colors.orange,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Siguiente nivel',
+                          style: TextStyle(
+                            color: Colors.white60,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          nextLevelLabel,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }

@@ -762,57 +762,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       const SizedBox(height: 32),
 
-                      // Card: Progreso de Desafíos (solo si es premium)
-                      if (_challengeProgress != null) ...[
-                        _buildChallengeProgressCard(),
-                        const SizedBox(height: 32),
-                      ],
-
                       // Card: Estado de Suscripción
                       _buildSubscriptionStatusCard(),
-                      const SizedBox(height: 32),
-
-                      // Card: Perfil Estoico
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[900],
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white12),
-                        ),
-                        child: Column(
-                          children: [
-                            const Icon(
-                              Icons.account_balance,
-                              color: Colors.white,
-                              size: 40,
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              _getArchetype(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            const Text(
-                              'Tu arquetipo estoico dominante',
-                              style: TextStyle(
-                                color: Colors.white60,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            // Mostrar barras de progreso según objetivos estoicos
-                            if (objetivos.isNotEmpty)
-                              ..._buildDynamicProgressBars(),
-                          ],
-                        ),
-                      ),
-
                       const SizedBox(height: 32),
 
                       // Tus Objetivos Estoicos
@@ -1123,32 +1074,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Widget _buildProgressBar(String label, double value, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(color: Colors.white70, fontSize: 13),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: LinearProgressIndicator(
-            value: value,
-            backgroundColor: Colors.white12,
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-            minHeight: 10,
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildStrengthCard(String title, IconData icon, Color color) {
     return Container(
@@ -1229,41 +1154,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // Métodos helper para formatear y obtener datos dinámicos
-  String _getArchetype() {
-    final objetivos = _quizData?['stoic_paths'] as List<dynamic>? ?? [];
-    if (objetivos.isEmpty) return 'El Estoico';
-
-    final objetivosStr = objetivos.join(',').toLowerCase();
-    if (objetivosStr.contains('paz interior') || objetivosStr.contains('paz')) {
-      return 'El Sabio Reflexivo';
-    } else if (objetivosStr.contains('autocontrol') ||
-        objetivosStr.contains('disciplina')) {
-      return 'El Guerrero Disciplinado';
-    } else if (objetivosStr.contains('resiliencia') ||
-        objetivosStr.contains('fortaleza')) {
-      return 'El Guardián Resiliente';
-    } else if (objetivosStr.contains('equilibrio') ||
-        objetivosStr.contains('balance')) {
-      return 'El Sabio Equilibrado';
-    }
-    return 'El Estoico';
-  }
-
-  List<Widget> _buildDynamicProgressBars() {
-    final objetivos = _quizData?['stoic_paths'] as List<dynamic>? ?? [];
-    List<Widget> bars = [];
-    for (int i = 0; i < objetivos.length && i < 3; i++) {
-      if (i > 0) bars.add(const SizedBox(height: 16));
-      bars.add(
-        _buildProgressBar(
-          _formatObjective(objetivos[i].toString()),
-          0.5 + (i * 0.15), // Valores progresivos
-          _getObjectiveColor(objetivos[i].toString()),
-        ),
-      );
-    }
-    return bars;
-  }
 
   String _formatObjective(String objective) {
     final map = {

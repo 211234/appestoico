@@ -26,9 +26,9 @@ void main() async {
 
   // Inicializar servicio de notificaciones (con manejo de errores)
   try {
-    await NotificationService.initialize();
-    // Reprogramar notificaciones guardadas
-    await NotificationService.rescheduleAllNotifications();
+  await NotificationService.initialize();
+  // Reprogramar notificaciones guardadas
+  await NotificationService.rescheduleAllNotifications();
   } catch (e) {
     print('⚠️ Error inicializando notificaciones: $e');
     // Continuar sin notificaciones
@@ -36,7 +36,7 @@ void main() async {
 
   // Inicializar monitoreo de conectividad (con manejo de errores)
   try {
-    await ConnectivityService.initialize();
+  await ConnectivityService.initialize();
   } catch (e) {
     print('⚠️ Error inicializando conectividad: $e');
     // Continuar sin monitoreo de conectividad

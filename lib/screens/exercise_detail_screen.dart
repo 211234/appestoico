@@ -518,9 +518,9 @@ class ExerciseDetailScreen extends StatelessWidget {
         
         if (result['success'] == true && context.mounted) {
           final data = result['data'];
-          final levelChanged = data['level_changed'] ?? false;
-          final totalPoints = data['total_points'] ?? 0;
-          final currentLevel = data['current_level_label'] ?? 'Principiante';
+        final levelChanged = data['level_changed'] ?? false;
+        final totalPoints = data['total_points'] ?? 0;
+        final currentLevel = data['current_level_label'] ?? 'Principiante';
 
           if (levelChanged) {
             _showLevelUpDialog(
@@ -568,7 +568,7 @@ class ExerciseDetailScreen extends StatelessWidget {
                 message: message,
                 backgroundColor: const Color(0xFF102110),
               );
-            } else {
+      } else {
               // Otro tipo de error
               SweetAlert.showSuccess(
                 context: context,
@@ -589,7 +589,7 @@ class ExerciseDetailScreen extends StatelessWidget {
         // Cerrar el modal para que el usuario vea que el ejercicio desapareció de la lista
         if (context.mounted) {
           Navigator.of(context).pop();
-        }
+            }
         // Si falla, mostrar mensaje de éxito básico
         if (context.mounted) {
           SweetAlert.showSuccess(
