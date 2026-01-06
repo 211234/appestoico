@@ -123,8 +123,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (subscriptionStr != null) {
         try {
           final subscription = json.decode(subscriptionStr);
-          isPremium = subscription['hasActiveSubscription'] == true &&
-                     subscription['status'] == 'active';
+          
+          final hasActive = subscription['hasActiveSubscription'] == true;
+          
+          // Verificar la fecha de fin del período
+          DateTime? currentPeriodEnd;
+          if (subscription['currentPeriodEnd'] != null) {
+            try {
+              final dateStr = subscription['currentPeriodEnd'].toString();
+              currentPeriodEnd = DateTime.parse(dateStr.replaceAll(' ', 'T'));
+            } catch (e) {
+              print('⚠️ Error al parsear currentPeriodEnd: $e');
+            }
+          }
+          
+          // Si hay fecha de fin del período, verificar que aún no haya expirado
+          if (currentPeriodEnd != null) {
+            final now = DateTime.now();
+            final isNotExpired = currentPeriodEnd.isAfter(now);
+            
+            // Si la suscripción tiene período activo (fecha futura) y hasActiveSubscription es true,
+            // está activa incluso si el status es 'cancelled' o 'canceled'
+            isPremium = isNotExpired && hasActive;
+          } else {
+            // Si no hay currentPeriodEnd, usar la lógica original
+            final status = subscription['status']?.toString().toLowerCase();
+            isPremium = hasActive && status == 'active';
+          }
         } catch (e) {
           print('Error al parsear suscripción: $e');
         }
