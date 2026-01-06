@@ -25,6 +25,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? _userData;
   Map<String, dynamic>? _quizData;
   Map<String, dynamic>? _challengeProgress;
+  Map<String, dynamic>? _subscription;
   TimeOfDay _notificationTime = const TimeOfDay(hour: 8, minute: 0);
   bool _isPremium = false;
 
@@ -33,6 +34,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     _loadUserData();
     _loadNotificationTime();
+    _loadSubscriptionData();
   }
 
   @override
@@ -112,19 +114,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  Future<void> _loadSubscriptionData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final subscriptionStr = prefs.getString('subscription');
+
+      if (subscriptionStr != null) {
+        try {
+          final subscription = json.decode(subscriptionStr);
+          setState(() {
+            _subscription = subscription;
+          });
+        } catch (e) {
+          print('Error al parsear suscripción: $e');
+        }
+      }
+    } catch (e) {
+      print('Error al cargar datos de suscripción: $e');
+    }
+  }
+
   Future<void> _checkAndLoadProgress() async {
     try {
       // Verificar si el usuario es premium
       final prefs = await SharedPreferences.getInstance();
       final subscriptionStr = prefs.getString('subscription');
-      
+
       bool isPremium = false;
-      
+
       if (subscriptionStr != null) {
         try {
           final subscription = json.decode(subscriptionStr);
-          isPremium = subscription['hasActiveSubscription'] == true &&
-                     subscription['status'] == 'active';
+
+          final hasActive = subscription['hasActiveSubscription'] == true;
+
+          // Verificar la fecha de fin del período
+          DateTime? currentPeriodEnd;
+          if (subscription['currentPeriodEnd'] != null) {
+            try {
+              final dateStr = subscription['currentPeriodEnd'].toString();
+              currentPeriodEnd = DateTime.parse(dateStr.replaceAll(' ', 'T'));
+            } catch (e) {
+              print('⚠️ Error al parsear currentPeriodEnd: $e');
+            }
+          }
+
+          // Si hay fecha de fin del período, verificar que aún no haya expirado
+          if (currentPeriodEnd != null) {
+            final now = DateTime.now();
+            final isNotExpired = currentPeriodEnd.isAfter(now);
+
+            // Si la suscripción tiene período activo (fecha futura) y hasActiveSubscription es true,
+            // está activa incluso si el status es 'cancelled' o 'canceled'
+            isPremium = isNotExpired && hasActive;
+          } else {
+            // Si no hay currentPeriodEnd, usar la lógica original
+            final status = subscription['status']?.toString().toLowerCase();
+            isPremium = hasActive && status == 'active';
+          }
         } catch (e) {
           print('Error al parsear suscripción: $e');
         }
@@ -133,10 +180,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // Si no es premium desde local, verificar en el perfil
       if (!isPremium && _userData != null) {
         isPremium = _userData!['isPremium'] == true ||
-                   _userData!['is_premium'] == true ||
-                   _userData!['premium'] == true ||
-                   _userData!['subscription_active'] == true ||
-                   _userData!['has_premium'] == true;
+            _userData!['is_premium'] == true ||
+            _userData!['premium'] == true ||
+            _userData!['subscription_active'] == true ||
+            _userData!['has_premium'] == true;
       }
 
       // Guardar el estado premium
@@ -175,9 +222,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           setState(() {
             _challengeProgress = responseData['data'];
           });
-          print('✅ Progreso actualizado en UI: ${_challengeProgress?['current_points']} puntos, nivel: ${_challengeProgress?['current_level_label']}');
+          print(
+              '✅ Progreso actualizado en UI: ${_challengeProgress?['current_points']} puntos, nivel: ${_challengeProgress?['current_level_label']}');
         } else {
-          print('⚠️ Respuesta sin datos válidos: ${responseData['message'] ?? 'Sin mensaje'}');
+          print(
+              '⚠️ Respuesta sin datos válidos: ${responseData['message'] ?? 'Sin mensaje'}');
         }
       } else {
         print('❌ Error HTTP al obtener progreso: ${response.statusCode}');
@@ -316,8 +365,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
 
       // ✅ Construir URL con el token JWT como parámetro
-      final url = Uri.parse(
-          '${AppConfig.subscriptionUrl}?token=$jwtToken');
+      final url = Uri.parse('${AppConfig.subscriptionUrl}?token=$jwtToken');
+
+      // ✅ Abrir URL directamente
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          SweetAlert.showError(
+            context: context,
+            title: 'Error',
+            message: 'No se pudo abrir la página web',
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        SweetAlert.showError(
+          context: context,
+          title: 'Error',
+          message: 'Ocurrió un error: $e',
+        );
+      }
+    }
+  }
+
+  Future<void> _launchSubscriptionStatus() async {
+    try {
+      // ✅ Obtener el token JWT del usuario
+      final prefs = await SharedPreferences.getInstance();
+      final jwtToken = prefs.getString('token');
+
+      if (jwtToken == null || jwtToken.isEmpty) {
+        if (mounted) {
+          SweetAlert.showError(
+            context: context,
+            title: 'Sesión expirada',
+            message: 'Por favor, inicia sesión nuevamente',
+          );
+        }
+        return;
+      }
+
+      // ✅ Construir URL con el token JWT como parámetro
+      final url =
+          Uri.parse('${AppConfig.subscriptionStatusUrl}?token=$jwtToken');
 
       // ✅ Abrir URL directamente
       if (await canLaunchUrl(url)) {
@@ -671,53 +763,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       const SizedBox(height: 32),
 
-                      // Card: Progreso de Desafíos (solo si es premium)
-                      if (_challengeProgress != null) ...[
-                        _buildChallengeProgressCard(),
-                        const SizedBox(height: 32),
-                      ],
-
-                      // Card: Perfil Estoico
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[900],
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white12),
-                        ),
-                        child: Column(
-                          children: [
-                            const Icon(
-                              Icons.account_balance,
-                              color: Colors.white,
-                              size: 40,
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              _getArchetype(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            const Text(
-                              'Tu arquetipo estoico dominante',
-                              style: TextStyle(
-                                color: Colors.white60,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            // Mostrar barras de progreso según objetivos estoicos
-                            if (objetivos.isNotEmpty)
-                              ..._buildDynamicProgressBars(),
-                          ],
-                        ),
-                      ),
-
+                      // Card: Estado de Suscripción
+                      _buildSubscriptionStatusCard(),
                       const SizedBox(height: 32),
 
                       // Tus Objetivos Estoicos
@@ -1028,33 +1075,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Widget _buildProgressBar(String label, double value, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(color: Colors.white70, fontSize: 13),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: LinearProgressIndicator(
-            value: value,
-            backgroundColor: Colors.white12,
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-            minHeight: 10,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildStrengthCard(String title, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1134,41 +1154,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // Métodos helper para formatear y obtener datos dinámicos
-  String _getArchetype() {
-    final objetivos = _quizData?['stoic_paths'] as List<dynamic>? ?? [];
-    if (objetivos.isEmpty) return 'El Estoico';
-
-    final objetivosStr = objetivos.join(',').toLowerCase();
-    if (objetivosStr.contains('paz interior') || objetivosStr.contains('paz')) {
-      return 'El Sabio Reflexivo';
-    } else if (objetivosStr.contains('autocontrol') ||
-        objetivosStr.contains('disciplina')) {
-      return 'El Guerrero Disciplinado';
-    } else if (objetivosStr.contains('resiliencia') ||
-        objetivosStr.contains('fortaleza')) {
-      return 'El Guardián Resiliente';
-    } else if (objetivosStr.contains('equilibrio') ||
-        objetivosStr.contains('balance')) {
-      return 'El Sabio Equilibrado';
-    }
-    return 'El Estoico';
-  }
-
-  List<Widget> _buildDynamicProgressBars() {
-    final objetivos = _quizData?['stoic_paths'] as List<dynamic>? ?? [];
-    List<Widget> bars = [];
-    for (int i = 0; i < objetivos.length && i < 3; i++) {
-      if (i > 0) bars.add(const SizedBox(height: 16));
-      bars.add(
-        _buildProgressBar(
-          _formatObjective(objetivos[i].toString()),
-          0.5 + (i * 0.15), // Valores progresivos
-          _getObjectiveColor(objetivos[i].toString()),
-        ),
-      );
-    }
-    return bars;
-  }
 
   String _formatObjective(String objective) {
     final map = {
@@ -1299,13 +1284,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildChallengeProgressCard() {
     if (_challengeProgress == null) return const SizedBox.shrink();
 
-    final currentLevel = _challengeProgress!['current_level_label'] ?? 'Principiante';
+    final currentLevel =
+        _challengeProgress!['current_level_label'] ?? 'Principiante';
     final currentPoints = _challengeProgress!['current_points'] ?? 0;
     final nextLevel = _challengeProgress!['next_level'];
-    
+
     int pointsNeeded = 0;
     String nextLevelLabel = 'Nivel máximo alcanzado';
-    
+
     if (nextLevel != null) {
       pointsNeeded = nextLevel['points_needed'] ?? 0;
       nextLevelLabel = nextLevel['next_level_label'] ?? 'Siguiente nivel';
@@ -1430,7 +1416,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: FractionallySizedBox(
                 alignment: Alignment.centerLeft,
-                widthFactor: (currentPoints / (currentPoints + pointsNeeded)).clamp(0.0, 1.0),
+                widthFactor: (currentPoints / (currentPoints + pointsNeeded))
+                    .clamp(0.0, 1.0),
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -1484,6 +1471,98 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubscriptionStatusCard() {
+    bool isActive = false;
+    String statusText = 'Sin suscripción';
+    Color statusColor = Colors.red;
+    IconData statusIcon = Icons.cancel;
+
+    if (_subscription != null) {
+      final hasActive = _subscription!['hasActiveSubscription'] == true;
+      final status = _subscription!['status'] ?? '';
+      isActive = hasActive && status == 'active';
+
+      if (isActive) {
+        statusText = 'Premium Activo';
+        statusColor = const Color.fromARGB(255, 105, 194, 64);
+        statusIcon = Icons.verified;
+      } else {
+        statusText = 'Sin suscripción';
+        statusColor = Colors.red;
+        statusIcon = Icons.cancel;
+      }
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            statusColor.withOpacity(0.15),
+            statusColor.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: statusColor.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              statusIcon,
+              color: statusColor,
+              size: 40,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Estado de Suscripción',
+            style: TextStyle(
+              color: Colors.white60,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            statusText,
+            style: TextStyle(
+              color: statusColor,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _launchSubscriptionStatus,
+              icon: const Icon(Icons.language),
+              label: const Text('Ver Estatus'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: statusColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

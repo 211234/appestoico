@@ -78,9 +78,9 @@ class _Quiz1ScreenState extends State<Quiz1Screen> {
 
       // ✅ Navegar a HomePage (Quiz 1 completado)
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const HomePage()),
-        );
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const HomePage()),
+      );
       }
     }
   }

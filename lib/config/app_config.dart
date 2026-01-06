@@ -11,6 +11,8 @@ class AppConfig {
   // URLs específicas
   static String get googleAuthRedirectUrl => '$apiBaseUrl/auth/google/redirect';
   static String get subscriptionUrl => '$webBaseUrl/subscription/premium';
+    static String get subscriptionStatusUrl => '$webBaseUrl/subscription/status';
+
   
   // Deep links
   static String get deepLinkScheme => dotenv.env['DEEP_LINK_SCHEME'] ?? 'estoico';

@@ -87,9 +87,9 @@ class _Quiz4ScreenState extends State<Quiz4Screen> {
 
     // Navegar a Quiz5
     if (mounted) {
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (context) => const Quiz5Screen()));
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const Quiz5Screen()));
     }
   }
 
