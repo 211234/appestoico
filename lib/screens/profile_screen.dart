@@ -145,9 +145,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (subscriptionStr != null) {
         try {
           final subscription = json.decode(subscriptionStr);
-          
+
           final hasActive = subscription['hasActiveSubscription'] == true;
-          
+
           // Verificar la fecha de fin del período
           DateTime? currentPeriodEnd;
           if (subscription['currentPeriodEnd'] != null) {
@@ -158,12 +158,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               print('⚠️ Error al parsear currentPeriodEnd: $e');
             }
           }
-          
+
           // Si hay fecha de fin del período, verificar que aún no haya expirado
           if (currentPeriodEnd != null) {
             final now = DateTime.now();
             final isNotExpired = currentPeriodEnd.isAfter(now);
-            
+
             // Si la suscripción tiene período activo (fecha futura) y hasActiveSubscription es true,
             // está activa incluso si el status es 'cancelled' o 'canceled'
             isPremium = isNotExpired && hasActive;
@@ -408,7 +408,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
 
       // ✅ Construir URL con el token JWT como parámetro
-      final url = Uri.parse('${AppConfig.subscriptionStatusUrl}?token=$jwtToken');
+      final url =
+          Uri.parse('${AppConfig.subscriptionStatusUrl}?token=$jwtToken');
 
       // ✅ Abrir URL directamente
       if (await canLaunchUrl(url)) {
@@ -1073,7 +1074,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _loadUserData();
     }
   }
-
 
   Widget _buildStrengthCard(String title, IconData icon, Color color) {
     return Container(

@@ -94,8 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
         if (!mounted) return;
         setState(() {
-          _lastReflection =
-              mostRecent.text?.isNotEmpty == true ||
+          _lastReflection = mostRecent.text?.isNotEmpty == true ||
                   mostRecent.morningText?.isNotEmpty == true
               ? mostRecent
               : null;
@@ -547,161 +546,169 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   )
                                 : _dailyQuote != null
-                                ? Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
+                                    ? Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(10),
-                                            decoration: BoxDecoration(
-                                              color: Colors.orange.withOpacity(
-                                                0.3,
+                                          Row(
+                                            children: [
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.all(10),
+                                                decoration: BoxDecoration(
+                                                  color:
+                                                      Colors.orange.withOpacity(
+                                                    0.3,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.format_quote,
+                                                  color: Colors.orange,
+                                                  size: 28,
+                                                ),
                                               ),
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                            child: const Icon(
-                                              Icons.format_quote,
-                                              color: Colors.orange,
-                                              size: 28,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          const Expanded(
-                                            child: Text(
-                                              'Frase del día',
-                                              style: TextStyle(
-                                                color: Colors.orange,
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        '"${_dailyQuote!.quote}"',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 20,
-                                          fontStyle: FontStyle.italic,
-                                          height: 1.5,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        maxLines: 4,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        '— ${_dailyQuote!.author}',
-                                        style: const TextStyle(
-                                          color: Colors.orange,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 8,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.orange.withOpacity(
-                                                0.2,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                              border: Border.all(
-                                                color: Colors.orange,
-                                                width: 1,
-                                              ),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: const [
-                                                Text(
-                                                  'Ver más',
+                                              const SizedBox(width: 12),
+                                              const Expanded(
+                                                child: Text(
+                                                  'Frase del día',
                                                   style: TextStyle(
                                                     color: Colors.orange,
-                                                    fontSize: 14,
+                                                    fontSize: 18,
                                                     fontWeight: FontWeight.bold,
                                                   ),
                                                 ),
-                                                SizedBox(width: 6),
-                                                Icon(
-                                                  Icons.arrow_forward,
-                                                  color: Colors.orange,
-                                                  size: 16,
-                                                ),
-                                              ],
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            '"${_dailyQuote!.quote}"',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 20,
+                                              fontStyle: FontStyle.italic,
+                                              height: 1.5,
+                                              fontWeight: FontWeight.w500,
                                             ),
+                                            maxLines: 4,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            '— ${_dailyQuote!.author}',
+                                            style: const TextStyle(
+                                              color: Colors.orange,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.end,
+                                            children: [
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 12,
+                                                  vertical: 8,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color:
+                                                      Colors.orange.withOpacity(
+                                                    0.2,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(20),
+                                                  border: Border.all(
+                                                    color: Colors.orange,
+                                                    width: 1,
+                                                  ),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: const [
+                                                    Text(
+                                                      'Ver más',
+                                                      style: TextStyle(
+                                                        color: Colors.orange,
+                                                        fontSize: 14,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                    SizedBox(width: 6),
+                                                    Icon(
+                                                      Icons.arrow_forward,
+                                                      color: Colors.orange,
+                                                      size: 16,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ],
-                                      ),
-                                    ],
-                                  )
-                                : Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
+                                      )
+                                    : Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(10),
-                                            decoration: BoxDecoration(
-                                              color: Colors.orange.withOpacity(
-                                                0.3,
+                                          Row(
+                                            children: [
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.all(10),
+                                                decoration: BoxDecoration(
+                                                  color:
+                                                      Colors.orange.withOpacity(
+                                                    0.3,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.format_quote,
+                                                  color: Colors.orange,
+                                                  size: 28,
+                                                ),
                                               ),
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                            child: const Icon(
-                                              Icons.format_quote,
-                                              color: Colors.orange,
-                                              size: 28,
+                                              const SizedBox(width: 12),
+                                              const Text(
+                                                'Frase del día',
+                                                style: TextStyle(
+                                                  color: Colors.orange,
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 16),
+                                          const Text(
+                                            '"El hombre sabio es aquel que conoce sus limitaciones"',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 20,
+                                              fontStyle: FontStyle.italic,
+                                              height: 1.5,
+                                              fontWeight: FontWeight.w500,
                                             ),
                                           ),
-                                          const SizedBox(width: 12),
+                                          const SizedBox(height: 16),
                                           const Text(
-                                            'Frase del día',
+                                            '— Sócrates',
                                             style: TextStyle(
                                               color: Colors.orange,
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
                                             ),
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 16),
-                                      const Text(
-                                        '"El hombre sabio es aquel que conoce sus limitaciones"',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 20,
-                                          fontStyle: FontStyle.italic,
-                                          height: 1.5,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      const Text(
-                                        '— Sócrates',
-                                        style: TextStyle(
-                                          color: Colors.orange,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
                           ),
                         ),
                       ],
@@ -716,6 +723,12 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
+                  // Banner Premium (solo si no es premium)
+                  if (!_isPremium) ...[
+                    _buildPremiumBanner(),
+                    const SizedBox(height: 24),
+                  ],
+
                   // Última reflexión (últimas 24 horas)
                   if (!_isLoadingReflection && _lastReflection != null) ...[
                     Container(
@@ -1268,6 +1281,72 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPremiumBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.amber.shade400.withOpacity(0.9),
+            Colors.orange.shade600.withOpacity(0.9),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.orange.withOpacity(0.5),
+            blurRadius: 20,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.workspace_premium,
+              color: Colors.white,
+              size: 36,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '¡Desbloquea el Poder Estoico!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Hazte Premium',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
