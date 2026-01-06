@@ -73,8 +73,39 @@ class LocalStorageService {
   static Future<bool> hasActiveSubscription() async {
     final subscription = await getSubscription();
     if (subscription != null) {
-      return subscription['hasActiveSubscription'] == true &&
-             subscription['status'] == 'active';
+      final hasActive = subscription['hasActiveSubscription'] == true;
+      
+      // Verificar la fecha de fin del período actual
+      DateTime? currentPeriodEnd;
+      if (subscription['currentPeriodEnd'] != null) {
+        try {
+          // El formato es "2026-01-30 02:25:19" (MySQL datetime)
+          final dateStr = subscription['currentPeriodEnd'].toString();
+          currentPeriodEnd = DateTime.parse(dateStr.replaceAll(' ', 'T'));
+        } catch (e) {
+          print('⚠️ Error al parsear currentPeriodEnd: $e');
+        }
+      }
+      
+      // Si hay fecha de fin del período, verificar que aún no haya expirado
+      if (currentPeriodEnd != null) {
+        final now = DateTime.now();
+        final isNotExpired = currentPeriodEnd.isAfter(now);
+        
+        // Si la suscripción tiene período activo (fecha futura) y hasActiveSubscription es true,
+        // está activa incluso si el status es 'cancelled' o 'canceled'
+        if (isNotExpired && hasActive) {
+          return true;
+        }
+        
+        // Si ya expiró, no está activa
+        return false;
+      }
+      
+      // Si no hay currentPeriodEnd, usar la lógica original
+      // Solo está activa si el status es 'active'
+      final status = subscription['status']?.toString().toLowerCase();
+      return hasActive && status == 'active';
     }
     return false;
   }

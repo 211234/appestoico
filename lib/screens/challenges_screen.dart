@@ -68,9 +68,39 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
           print('🔍 Suscripción local completa: $subscription');
           print('🔍 hasActiveSubscription: ${subscription['hasActiveSubscription']}');
           print('🔍 status: ${subscription['status']}');
+          print('🔍 currentPeriodEnd: ${subscription['currentPeriodEnd']}');
           
-          isPremium = subscription['hasActiveSubscription'] == true &&
-                     subscription['status'] == 'active';
+          // Verificar si tiene suscripción activa
+          final hasActive = subscription['hasActiveSubscription'] == true;
+          
+          // Verificar la fecha de fin del período
+          DateTime? currentPeriodEnd;
+          if (subscription['currentPeriodEnd'] != null) {
+            try {
+              final dateStr = subscription['currentPeriodEnd'].toString();
+              currentPeriodEnd = DateTime.parse(dateStr.replaceAll(' ', 'T'));
+              print('🔍 currentPeriodEnd parseado: $currentPeriodEnd');
+            } catch (e) {
+              print('⚠️ Error al parsear currentPeriodEnd: $e');
+            }
+          }
+          
+          // Si hay fecha de fin del período, verificar que aún no haya expirado
+          if (currentPeriodEnd != null) {
+            final now = DateTime.now();
+            final isNotExpired = currentPeriodEnd.isAfter(now);
+            
+            // Si la suscripción tiene período activo (fecha futura) y hasActiveSubscription es true,
+            // está activa incluso si el status es 'cancelled' o 'canceled'
+            isPremium = isNotExpired && hasActive;
+            
+            print('🔍 isPremium basado en currentPeriodEnd: $isPremium (expira: $currentPeriodEnd, ahora: $now)');
+          } else {
+            // Si no hay currentPeriodEnd, usar la lógica original
+            final status = subscription['status']?.toString().toLowerCase();
+            isPremium = hasActive && status == 'active';
+            print('🔍 isPremium desde suscripción local (sin currentPeriodEnd): $isPremium');
+          }
           
           print('🔍 isPremium desde suscripción local: $isPremium');
         } catch (e) {
@@ -114,8 +144,33 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                 // Guardar la suscripción localmente
                 await prefs.setString('subscription', jsonEncode(subscription));
                 
-                isPremium = subscription['hasActiveSubscription'] == true &&
-                           subscription['status'] == 'active';
+                final hasActive = subscription['hasActiveSubscription'] == true;
+                
+                // Verificar también currentPeriodEnd si existe
+                DateTime? currentPeriodEnd;
+                if (subscription['currentPeriodEnd'] != null) {
+                  try {
+                    final dateStr = subscription['currentPeriodEnd'].toString();
+                    currentPeriodEnd = DateTime.parse(dateStr.replaceAll(' ', 'T'));
+                    final now = DateTime.now();
+                    
+                    if (currentPeriodEnd.isAfter(now) && hasActive) {
+                      isPremium = true;
+                      print('🔍 isPremium activado por currentPeriodEnd válido: $currentPeriodEnd');
+                    } else {
+                      isPremium = false;
+                    }
+                  } catch (e) {
+                    print('⚠️ Error al parsear currentPeriodEnd del servidor: $e');
+                    // Fallback a lógica original
+                    final status = subscription['status']?.toString().toLowerCase();
+                    isPremium = hasActive && status == 'active';
+                  }
+                } else {
+                  // Si no hay currentPeriodEnd, usar la lógica original
+                  final status = subscription['status']?.toString().toLowerCase();
+                  isPremium = hasActive && status == 'active';
+                }
                 
                 print('🔍 isPremium desde servidor: $isPremium');
               } else if (data['data'] != null) {
@@ -127,8 +182,33 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                   
                   await prefs.setString('subscription', jsonEncode(subscription));
                   
-                  isPremium = subscription['hasActiveSubscription'] == true &&
-                             subscription['status'] == 'active';
+                  final hasActive = subscription['hasActiveSubscription'] == true;
+                  
+                  // Verificar también currentPeriodEnd si existe
+                  DateTime? currentPeriodEnd;
+                  if (subscription['currentPeriodEnd'] != null) {
+                    try {
+                      final dateStr = subscription['currentPeriodEnd'].toString();
+                      currentPeriodEnd = DateTime.parse(dateStr.replaceAll(' ', 'T'));
+                      final now = DateTime.now();
+                      
+                      if (currentPeriodEnd.isAfter(now) && hasActive) {
+                        isPremium = true;
+                        print('🔍 isPremium activado por currentPeriodEnd válido: $currentPeriodEnd');
+                      } else {
+                        isPremium = false;
+                      }
+                    } catch (e) {
+                      print('⚠️ Error al parsear currentPeriodEnd del servidor: $e');
+                      // Fallback a lógica original
+                      final status = subscription['status']?.toString().toLowerCase();
+                      isPremium = hasActive && status == 'active';
+                    }
+                  } else {
+                    // Si no hay currentPeriodEnd, usar la lógica original
+                    final status = subscription['status']?.toString().toLowerCase();
+                    isPremium = hasActive && status == 'active';
+                  }
                   
                   print('🔍 isPremium desde data.subscription: $isPremium');
                 } else if (data['data']['user'] != null && data['data']['user']['subscription'] != null) {
@@ -138,8 +218,33 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                   
                   await prefs.setString('subscription', jsonEncode(subscription));
                   
-                  isPremium = subscription['hasActiveSubscription'] == true &&
-                             subscription['status'] == 'active';
+                  final hasActive = subscription['hasActiveSubscription'] == true;
+                  
+                  // Verificar también currentPeriodEnd si existe
+                  DateTime? currentPeriodEnd;
+                  if (subscription['currentPeriodEnd'] != null) {
+                    try {
+                      final dateStr = subscription['currentPeriodEnd'].toString();
+                      currentPeriodEnd = DateTime.parse(dateStr.replaceAll(' ', 'T'));
+                      final now = DateTime.now();
+                      
+                      if (currentPeriodEnd.isAfter(now) && hasActive) {
+                        isPremium = true;
+                        print('🔍 isPremium activado por currentPeriodEnd válido: $currentPeriodEnd');
+                      } else {
+                        isPremium = false;
+                      }
+                    } catch (e) {
+                      print('⚠️ Error al parsear currentPeriodEnd del servidor: $e');
+                      // Fallback a lógica original
+                      final status = subscription['status']?.toString().toLowerCase();
+                      isPremium = hasActive && status == 'active';
+                    }
+                  } else {
+                    // Si no hay currentPeriodEnd, usar la lógica original
+                    final status = subscription['status']?.toString().toLowerCase();
+                    isPremium = hasActive && status == 'active';
+                  }
                   
                   print('🔍 isPremium desde data.user.subscription: $isPremium');
                 } else {
@@ -165,8 +270,33 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
             // Guardar la suscripción localmente
             await prefs.setString('subscription', jsonEncode(subscription));
             
-            isPremium = subscription['hasActiveSubscription'] == true &&
-                       subscription['status'] == 'active';
+            final hasActive = subscription['hasActiveSubscription'] == true;
+            
+            // Verificar también currentPeriodEnd si existe
+            DateTime? currentPeriodEnd;
+            if (subscription['currentPeriodEnd'] != null) {
+              try {
+                final dateStr = subscription['currentPeriodEnd'].toString();
+                currentPeriodEnd = DateTime.parse(dateStr.replaceAll(' ', 'T'));
+                final now = DateTime.now();
+                
+                if (currentPeriodEnd.isAfter(now) && hasActive) {
+                  isPremium = true;
+                  print('🔍 isPremium activado por currentPeriodEnd válido: $currentPeriodEnd');
+                } else {
+                  isPremium = false;
+                }
+              } catch (e) {
+                print('⚠️ Error al parsear currentPeriodEnd de getUserProfile: $e');
+                // Fallback a lógica original
+                final status = subscription['status']?.toString().toLowerCase();
+                isPremium = hasActive && status == 'active';
+              }
+            } else {
+              // Si no hay currentPeriodEnd, usar la lógica original
+              final status = subscription['status']?.toString().toLowerCase();
+              isPremium = hasActive && status == 'active';
+            }
             
             print('🔍 isPremium desde getUserProfile.subscription: $isPremium');
           }
